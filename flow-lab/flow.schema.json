@@ -1,0 +1,595 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Flow Lab — contrato v1",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "meta",
+    "scenarios",
+    "steps",
+    "graph",
+    "sources",
+    "terms",
+    "frames",
+    "traces"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "meta": {
+      "type": "object",
+      "required": ["id", "title", "language", "description"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "subtitle": {
+          "type": "string"
+        },
+        "language": {
+          "const": "pt-BR"
+        },
+        "description": {
+          "type": "string"
+        },
+        "sourceDocument": {
+          "type": "string"
+        },
+        "verifiedAt": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "string"
+        },
+        "versions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "references": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["title", "url"],
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string",
+                "pattern": "^https://"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "scenarios": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "label"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/step"
+      }
+    },
+    "graph": {
+      "type": "object",
+      "required": ["width", "height", "nodes", "edges"],
+      "properties": {
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "nodes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/node"
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/edge"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "sources": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/source"
+      }
+    },
+    "terms": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/term"
+      }
+    },
+    "frames": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/frame"
+      }
+    },
+    "traces": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["label", "frameIds"],
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "frameIds": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          },
+          "branches": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "text": {
+      "type": "string"
+    },
+    "termIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "scenarios": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "location": {
+      "type": "object",
+      "required": ["sourceId", "line"],
+      "properties": {
+        "sourceId": {
+          "type": "string"
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "segment": {
+      "type": "object",
+      "required": ["startLine", "lines"],
+      "properties": {
+        "startLine": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "lines": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "source": {
+      "type": "object",
+      "required": ["path", "language", "origin", "segments"],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "language": {
+          "type": "string"
+        },
+        "origin": {
+          "enum": ["application", "dependency"]
+        },
+        "package": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "runtimeSourceId": {
+          "type": "string"
+        },
+        "segments": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/segment"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "term": {
+      "type": "object",
+      "required": ["label", "category", "definition", "usage"],
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "definition": {
+          "type": "string"
+        },
+        "usage": {
+          "type": "string"
+        },
+        "sourceId": {
+          "type": "string"
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "choice": {
+      "type": "object",
+      "required": ["label", "description"],
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "scenario": {
+          "type": "string"
+        },
+        "frameId": {
+          "type": "string"
+        },
+        "nodeId": {
+          "type": "string"
+        },
+        "branch": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "variable": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "values": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "anyOf": [
+        {
+          "required": ["value"]
+        },
+        {
+          "required": ["values"]
+        }
+      ],
+      "additionalProperties": false
+    },
+    "frame": {
+      "type": "object",
+      "required": [
+        "sourceId",
+        "line",
+        "label",
+        "explanation",
+        "kind",
+        "termIds"
+      ],
+      "properties": {
+        "sourceId": {
+          "type": "string"
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "label": {
+          "type": "string"
+        },
+        "explanation": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "execute",
+            "declaration",
+            "call",
+            "return",
+            "register",
+            "async",
+            "parallel",
+            "condition",
+            "callback",
+            "reactive",
+            "render",
+            "future"
+          ]
+        },
+        "termIds": {
+          "$ref": "#/definitions/termIds"
+        },
+        "target": {
+          "$ref": "#/definitions/location"
+        },
+        "stack": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "scenarios": {
+          "$ref": "#/definitions/scenarios"
+        },
+        "choices": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/choice"
+          }
+        },
+        "variables": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/variable"
+          }
+        },
+        "when": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "step": {
+      "type": "object",
+      "required": ["id", "title", "summary"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "number": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "kindLabel": {
+          "type": "string"
+        },
+        "timing": {
+          "type": "string"
+        },
+        "kicker": {
+          "type": "string"
+        },
+        "actor": {
+          "type": "string"
+        },
+        "effect": {
+          "type": "string"
+        },
+        "insight": {
+          "type": "string"
+        },
+        "next": {
+          "type": "string"
+        },
+        "log": {
+          "type": "string"
+        },
+        "activeNodes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "primaryNodeId": {
+          "type": "string"
+        },
+        "termIds": {
+          "$ref": "#/definitions/termIds"
+        },
+        "variants": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "number": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "summary": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string"
+              },
+              "kindLabel": {
+                "type": "string"
+              },
+              "timing": {
+                "type": "string"
+              },
+              "kicker": {
+                "type": "string"
+              },
+              "actor": {
+                "type": "string"
+              },
+              "effect": {
+                "type": "string"
+              },
+              "insight": {
+                "type": "string"
+              },
+              "next": {
+                "type": "string"
+              },
+              "log": {
+                "type": "string"
+              },
+              "activeNodes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "primaryNodeId": {
+                "type": "string"
+              },
+              "termIds": {
+                "$ref": "#/definitions/termIds"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "node": {
+      "type": "object",
+      "required": ["id", "step", "x", "y", "title", "traceId"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "step": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "x": {
+          "type": "number",
+          "minimum": 0
+        },
+        "y": {
+          "type": "number",
+          "minimum": 0
+        },
+        "title": {
+          "type": "string"
+        },
+        "subtitle": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "traceId": {
+          "type": "string"
+        },
+        "scenarios": {
+          "$ref": "#/definitions/scenarios"
+        }
+      },
+      "additionalProperties": false
+    },
+    "edge": {
+      "type": "object",
+      "required": ["from", "to", "step"],
+      "properties": {
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "step": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "type": {
+          "type": "string"
+        },
+        "scenarios": {
+          "$ref": "#/definitions/scenarios"
+        },
+        "loop": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

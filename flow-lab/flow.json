@@ -1,0 +1,2969 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "id": "angular-catalog",
+    "title": "Do index.html aos cards do catálogo",
+    "subtitle": "Angular → catálogo",
+    "language": "pt-BR",
+    "description": "Percurso didático baseado no código local; não é uma sessão real de debugger. Etapas agrupam responsabilidades; a trilha de linhas preserva chamadas e retornos dentro de cada grupo.",
+    "sourceDocument": "flow-angular-inicializacao-catalogo-deep.md",
+    "verifiedAt": "2026-10-22",
+    "versions": {
+      "angular": "21.2.18",
+      "rxjs": "7.8.2"
+    },
+    "references": [
+      {
+        "title": "Angular: HTTP requests",
+        "url": "https://angular.dev/guide/http/making-requests"
+      },
+      {
+        "title": "Angular: Signals",
+        "url": "https://angular.dev/guide/signals"
+      },
+      {
+        "title": "RxJS: Observable",
+        "url": "https://rxjs.dev/api/index/class/Observable"
+      }
+    ],
+    "revision": "876136c (worktree com alterações locais)"
+  },
+  "scenarios": [
+    {
+      "id": "success",
+      "label": "Sucesso",
+      "color": "#00ff38"
+    },
+    {
+      "id": "empty",
+      "label": "Vazio",
+      "color": "#ffe25d"
+    },
+    {
+      "id": "error",
+      "label": "Erro",
+      "color": "#ff5268"
+    }
+  ],
+  "steps": [
+    {
+      "number": "01",
+      "kind": "preparation",
+      "kindLabel": "PREPARAÇÃO",
+      "timing": "ANTES DO ANGULAR",
+      "kicker": "O navegador prepara o terreno",
+      "title": "O HTML entrega o host vazio",
+      "summary": "O navegador interpreta a página-base. Ele registra a raiz da SPA, executa a configuração pública e encontra <app-root>, o ponto que o Angular ocupará depois. Ainda não existe componente Angular em execução.",
+      "actor": "Navegador / parser HTML",
+      "effect": "Host e configuração ficam disponíveis",
+      "insight": "<app-root> não inicializa a aplicação. Ele é apenas o endereço visual em que o bootstrap instalará o componente raiz.",
+      "next": "O bundle executa main.ts, que pede ao Angular para inicializar a aplicação.",
+      "activeNodes": ["html"],
+      "log": "[01][HTML] host <app-root> e config.js disponíveis",
+      "id": "s01",
+      "termIds": ["component", "token"]
+    },
+    {
+      "number": "02",
+      "kind": "sync",
+      "kindLabel": "SÍNCRONO",
+      "timing": "ENTRYPOINT",
+      "kicker": "O código pede a inicialização",
+      "title": "bootstrapApplication cria o ambiente Angular",
+      "summary": "bootstrapApplication é a função do Angular chamada em main.ts:5. Ela recebe a classe App e o objeto appConfig, inicia o injector (mecanismo que fornece dependências) e cria o componente raiz. O retorno é uma Promise do bootstrap.",
+      "actor": "Browser executando o runtime Angular",
+      "effect": "Bootstrap e injector raiz são iniciados",
+      "insight": "A JVM não participa deste trecho. main.ts roda no navegador; a JVM executa o backend Java em outro processo.",
+      "next": "Antes de montar a interface, Angular processa os providers globais recebidos em appConfig.",
+      "activeNodes": ["bootstrap"],
+      "log": "[02][BOOTSTRAP] bootstrapApplication(App, appConfig)",
+      "id": "s02",
+      "termIds": ["bootstrap", "promise"]
+    },
+    {
+      "number": "03",
+      "kind": "sync",
+      "kindLabel": "REGISTRO",
+      "timing": "CONFIGURAÇÃO",
+      "kicker": "A infraestrutura entra no injector",
+      "title": "appConfig registra Router, HTTP e interceptor",
+      "summary": "appConfig, objeto em app.config.ts:8, registra providers: receitas usadas pelo injector para fornecer Router e HttpClient. withInterceptors([authInterceptor]) inclui a função que inspeciona cada requisição. Registrar a infraestrutura ainda não consulta produtos.",
+      "actor": "Sistema de injeção de dependências",
+      "effect": "Infraestrutura global fica resolvível",
+      "insight": "Provider é receita de construção e disponibilidade; não é sinônimo de execução imediata da dependência.",
+      "next": "Com o ambiente configurado, Angular cria App e conecta seu selector ao host <app-root>.",
+      "activeNodes": ["providers"],
+      "log": "[03][DI] Router + HttpClient + interceptor registrados",
+      "id": "s03",
+      "termIds": ["provider", "inject"]
+    },
+    {
+      "number": "04",
+      "kind": "parallel",
+      "kindLabel": "COMPOSIÇÃO",
+      "timing": "RAMOS PARALELOS",
+      "kicker": "O shell abre vários caminhos",
+      "title": "App monta o shell e o router-outlet",
+      "summary": "O @Component associa a classe App ao template. O shell cria header, carrinho, footer e toast, enquanto <router-outlet> reserva o lugar da página roteada. Esses ramos podem iniciar trabalhos próprios; o catálogo não espera todos terminarem.",
+      "actor": "Angular / renderer de componentes",
+      "effect": "Shell visível e outlet pronto",
+      "insight": "imports libera componentes para o template; não injeta services. O router-outlet é o encaixe da rota, não a rota em si.",
+      "next": "O Router compara a URL /produtos com a tabela registrada em appConfig.",
+      "activeNodes": ["shell", "header", "cart"],
+      "primaryNodeId": "shell",
+      "log": "[04][SHELL] App + outlet montados; header/cart seguem em paralelo",
+      "id": "s04",
+      "termIds": ["component", "router"]
+    },
+    {
+      "number": "05",
+      "kind": "async",
+      "kindLabel": "ASSÍNCRONO",
+      "timing": "LAZY LOADING",
+      "kicker": "A URL escolhe a próxima página",
+      "title": "Router reconhece /produtos e carrega a classe",
+      "summary": "Router associa a URL /produtos à rota em app.routes.ts:12. loadComponent guarda uma função que chama import(...): uma Promise carrega o módulo JavaScript e entrega a classe CatalogComponent. Esse carregamento é do código da página.",
+      "actor": "Angular Router + carregador de módulos JS",
+      "effect": "Classe do catálogo chega sob demanda",
+      "insight": "loadComponent carrega o código da página, não os produtos. Os dados só serão solicitados mais adiante pelo service.",
+      "next": "Com a Promise resolvida, Angular instancia CatalogComponent e resolve suas dependências.",
+      "activeNodes": ["router"],
+      "log": "[05][ROUTER][ASYNC] chunk de CatalogComponent resolvido",
+      "id": "s05",
+      "termIds": ["router", "promise"]
+    },
+    {
+      "number": "06",
+      "kind": "sync",
+      "kindLabel": "CONSTRUÇÃO",
+      "timing": "COMPONENTE",
+      "kicker": "A página ganha instância e estado",
+      "title": "CatalogComponent recebe o service e cria Signals",
+      "summary": "Angular cria um objeto CatalogComponent para esta página. inject(ProductService) fornece o objeto que ficará em productService, para chamar getPublicProducts depois. signal(true), signal(null) e signal([]) criam loading, error e products com os valores iniciais de carregamento, ausência de erro e lista vazia. Esses valores serão lidos pelo HTML e substituídos quando a resposta chegar.",
+      "actor": "Angular / injector do componente",
+      "effect": "Componente pronto com estado inicial",
+      "insight": "inject(ProductService) resolve uma instância; não chama getPublicProducts e não inicia rede por conta própria.",
+      "next": "Depois de criar a instância e preparar seus inputs, Angular chama o lifecycle ngOnInit.",
+      "activeNodes": ["catalog"],
+      "log": "[06][COMPONENT] CatalogComponent criado; Signals inicializados",
+      "id": "s06",
+      "termIds": ["instance", "inject", "signal"]
+    },
+    {
+      "number": "07",
+      "kind": "sync",
+      "kindLabel": "SÍNCRONO",
+      "timing": "LIFECYCLE",
+      "kicker": "O framework entrega o controle",
+      "title": "ngOnInit inicia a primeira busca",
+      "summary": "Angular chama ngOnInit, método de CatalogComponent em :103. A linha :104 lê os Signals pageIndex()=0 e pageSize()=12; depois chama this.loadProducts(0,12), outro método da mesma instância.",
+      "actor": "Angular / lifecycle do componente",
+      "effect": "loadProducts(0, 12) é chamado",
+      "insight": "implements OnInit descreve o contrato; a execução real do hook acontece porque o Angular controla a vida do componente.",
+      "next": "loadProducts prepara o estado visual e monta a subscription que observará a resposta futura.",
+      "activeNodes": ["oninit"],
+      "log": "[07][LIFECYCLE] ngOnInit → loadProducts(0, 12)",
+      "id": "s07",
+      "termIds": ["oninit", "page"]
+    },
+    {
+      "number": "08",
+      "kind": "sync",
+      "kindLabel": "ORQUESTRAÇÃO",
+      "timing": "PREPARA ASYNC",
+      "kicker": "A interface entra em carregamento",
+      "title": "loadProducts prepara estado e faz subscribe",
+      "summary": "Em catalog.component.ts:108–110, loadProducts escreve loading=true e error=null. O campo productService aponta para a instância de ProductService; seu método getPublicProducts, em product.service.ts:53, recebe page=0 e size=12 e retorna um Observable do RxJS. .subscribe é chamado nesse objeto retornado: ativa a cadeia HTTP e registra next/error.",
+      "actor": "Instância de CatalogComponent",
+      "effect": "UI em loading e callbacks registrados",
+      "insight": "subscribe define a continuação assíncrona. O método não fica parado esperando a rede responder.",
+      "next": "ProductService transforma page e size em uma requisição HTTP paginada.",
+      "activeNodes": ["load"],
+      "log": "[08][STATE] loading=true; subscribe registrado",
+      "id": "s08",
+      "termIds": [
+        "this",
+        "instance",
+        "method",
+        "observable",
+        "subscribe",
+        "page"
+      ]
+    },
+    {
+      "number": "09",
+      "kind": "sync",
+      "kindLabel": "SERVICE",
+      "timing": "CRIA A REQUISIÇÃO",
+      "kicker": "A apresentação delega o transporte",
+      "title": "ProductService produz o Observable HTTP",
+      "summary": "getPublicProducts é um método de ProductService, em product.service.ts:53. Ele usa o objeto HttpClient, resolvido por DI, para criar um Observable de GET /api/products com page e size. Observable é a classe do pacote rxjs 7.8.2; sua implementação vem de node_modules/rxjs.",
+      "actor": "ProductService + HttpClient",
+      "effect": "Observable da requisição é produzido",
+      "insight": "O service centraliza HTTP. Retornar Observable não significa possuir os produtos imediatamente.",
+      "next": "Ao ser ativada pela subscription, a requisição atravessa o authInterceptor antes de sair do browser.",
+      "activeNodes": ["service"],
+      "log": "[09][SERVICE] Observable GET /api/products?page=0&size=12",
+      "id": "s09",
+      "termIds": ["injectable", "http", "observable", "package"]
+    },
+    {
+      "number": "10",
+      "kind": "async",
+      "kindLabel": "ASSÍNCRONO",
+      "timing": "FRONTEIRA HTTP",
+      "kicker": "A requisição sai; o browser continua livre",
+      "title": "Interceptor encaminha e HTTP aguarda a API",
+      "summary": "authInterceptor, função em auth.interceptor.ts:6, lê a configuração e chama accessToken() da instância de AuthService. Sem token, next(request) encaminha a requisição pública. subscribe ativou essa cadeia; a resposta de rede chega depois, pelo callback.",
+      "actor": "HttpClient → interceptor → navegador",
+      "effect": "GET é despachado sem bloquear a UI",
+      "insight": "Interceptor encaminha ou transforma a requisição; ele não autoriza o usuário e precisa chamar next para a cadeia prosseguir.",
+      "next": "Escolha sucesso, vazio ou erro: a resposta decidirá qual callback e qual estado visual serão ativados.",
+      "activeNodes": ["interceptor", "http"],
+      "primaryNodeId": "http",
+      "log": "[10][HTTP][ASYNC] request enviado; event loop permanece livre",
+      "id": "s10",
+      "termIds": ["interceptor", "callback"]
+    },
+    {
+      "number": "11",
+      "kind": "reactive",
+      "kindLabel": "REATIVO",
+      "timing": "RESPOSTA ASSÍNCRONA",
+      "kicker": "A continuação atualiza o estado",
+      "title": "A resposta acorda a subscription",
+      "summary": "",
+      "actor": "RxJS callback + CatalogComponent",
+      "effect": "Signals recebem o resultado",
+      "insight": "",
+      "next": "Angular observa quais Signals mudaram e escolhe o ramo visual correspondente no template.",
+      "activeNodes": ["signals"],
+      "log": "",
+      "primaryNodeId": "signals",
+      "variants": {
+        "success": {
+          "title": "subscribe.next atualiza os Signals",
+          "summary": "A API devolve uma página com produtos. O callback next grava content, total e paginação nos Signals e encerra loading. Cada .set(...) notifica o grafo reativo usado pela view.",
+          "effect": "products=[…], total e loading=false",
+          "insight": "A resposta não manipula o DOM. Ela muda estado; Angular transforma essa mudança em atualização visual.",
+          "activeNodes": ["signals"],
+          "log": "[11][NEXT] HTTP 200 → products=[12] → loading=false"
+        },
+        "empty": {
+          "title": "subscribe.next recebe uma página vazia",
+          "summary": "A chamada foi bem-sucedida, mas content veio vazio. Isso não é erro de transporte: products recebe [] e loading vira false. O template distinguirá sucesso vazio de falha.",
+          "effect": "products=[] e loading=false",
+          "insight": "Estado vazio é um resultado válido da API. Ele percorre next, não o callback error.",
+          "activeNodes": ["signals"],
+          "log": "[11][NEXT] HTTP 200 → products=[] → loading=false"
+        },
+        "error": {
+          "title": "subscribe.error registra a falha",
+          "summary": "A requisição falha e o callback error escreve uma mensagem no Signal error. loading volta para false, permitindo que a view deixe o skeleton e mostre a recuperação.",
+          "effect": "error='…' e loading=false",
+          "insight": "Falha assíncrona do GET não cai no .catch do bootstrapApplication; ela pertence à subscription da requisição.",
+          "activeNodes": ["error"],
+          "log": "[11][ERROR] falha HTTP → error='…' → loading=false",
+          "primaryNodeId": "error"
+        }
+      },
+      "id": "s11",
+      "termIds": ["callback", "signal"]
+    },
+    {
+      "number": "12",
+      "kind": "reactive",
+      "kindLabel": "RENDERIZAÇÃO",
+      "timing": "VIEW REATIVA",
+      "kicker": "Estado vira interface",
+      "title": "O template escolhe o resultado",
+      "summary": "",
+      "actor": "Angular renderer + template control flow",
+      "effect": "Resultado aparece no router-outlet",
+      "insight": "",
+      "next": "O fluxo principal terminou; retry e paginação podem reiniciar a mesma cadeia por um novo evento.",
+      "activeNodes": ["view", "card"],
+      "log": "",
+      "primaryNodeId": "view",
+      "variants": {
+        "success": {
+          "title": "@for cria um ProductCard por produto",
+          "summary": "Como loading é false, error é null e products possui itens, @for cria as views. [product] envia cada objeto ao ProductCardComponent, que apenas apresenta os dados e prepara o routerLink de detalhes.",
+          "effect": "Grid de ProductCards é renderizado",
+          "insight": "O card recebe o produto por @Input e não repete o GET. track product.id preserva a identidade visual dos itens.",
+          "activeNodes": ["view", "card"],
+          "primaryNodeId": "card",
+          "log": "[12][VIEW] @for → [product] → ProductCardComponent"
+        },
+        "empty": {
+          "title": "@else if mostra o estado vazio",
+          "summary": "O Signal products contém [], então products().length === 0 seleciona o estado vazio. A página informa que não existem produtos publicados sem tratar isso como exceção.",
+          "effect": "Mensagem de catálogo vazio é renderizada",
+          "insight": "@if seleciona uma única representação coerente do estado; vazio, erro e carregamento não devem competir na tela.",
+          "activeNodes": ["empty"],
+          "primaryNodeId": "empty",
+          "log": "[12][VIEW] products.length=0 → estado vazio"
+        },
+        "error": {
+          "title": "@else if mostra erro e retry",
+          "summary": "O Signal error possui mensagem. O template apresenta o feedback com role=alert e oferece Tentar novamente. Nenhum ProductCard é criado nesse ramo.",
+          "effect": "Erro recuperável e botão retry aparecem",
+          "insight": "A view reage ao estado; o retry é um novo evento futuro e não acontece apenas porque o método existe na classe.",
+          "activeNodes": ["error"],
+          "log": "[12][VIEW] error() → alerta + ação de retry",
+          "primaryNodeId": "view"
+        }
+      },
+      "id": "s12",
+      "termIds": ["template", "input"]
+    },
+    {
+      "number": "13",
+      "kind": "sync",
+      "kindLabel": "REENTRADA",
+      "timing": "EVENTO FUTURO",
+      "kicker": "O mesmo caminho pode rodar novamente",
+      "title": "Retry e paginação voltam a loadProducts",
+      "summary": "retry e handlePageEvent são métodos de CatalogComponent. O primeiro é chamado por (click); o segundo, pelo evento (page) do paginator. Cada um volta a loadProducts com argumentos de paginação. São entradas alternativas; não executam juntas por estarem declaradas.",
+      "actor": "Usuário → event binding → componente",
+      "effect": "Uma nova requisição percorre o mesmo ciclo",
+      "insight": "Declaração não é execução. (page) e (click) são eventos que reentram no fluxo somente quando acontecem.",
+      "next": "Fluxo completo. Reinicie para trocar o cenário e comparar outra ramificação.",
+      "activeNodes": ["reentry", "load"],
+      "log": "[13][EVENT] retry/paginação → nova chamada loadProducts(…)",
+      "id": "s13",
+      "termIds": ["event", "method"]
+    }
+  ],
+  "graph": {
+    "width": 1000,
+    "height": 620,
+    "nodes": [
+      {
+        "id": "html",
+        "step": 0,
+        "x": 25,
+        "y": 45,
+        "title": "index.html",
+        "subtitle": "host + config",
+        "type": "sync",
+        "traceId": "html"
+      },
+      {
+        "id": "bootstrap",
+        "step": 1,
+        "x": 215,
+        "y": 45,
+        "title": "main.ts",
+        "subtitle": "bootstrap",
+        "type": "sync",
+        "traceId": "bootstrap"
+      },
+      {
+        "id": "providers",
+        "step": 2,
+        "x": 405,
+        "y": 45,
+        "title": "appConfig",
+        "subtitle": "providers",
+        "type": "sync",
+        "traceId": "providers"
+      },
+      {
+        "id": "shell",
+        "step": 3,
+        "x": 595,
+        "y": 45,
+        "title": "App shell",
+        "subtitle": "router-outlet",
+        "type": "sync",
+        "traceId": "shell"
+      },
+      {
+        "id": "header",
+        "step": 3,
+        "x": 805,
+        "y": 18,
+        "title": "Header/Auth",
+        "subtitle": "ramo paralelo",
+        "type": "parallel",
+        "traceId": "header"
+      },
+      {
+        "id": "cart",
+        "step": 3,
+        "x": 805,
+        "y": 108,
+        "title": "Carrinho",
+        "subtitle": "ramo paralelo",
+        "type": "parallel",
+        "traceId": "cart"
+      },
+      {
+        "id": "router",
+        "step": 4,
+        "x": 595,
+        "y": 180,
+        "title": "Router",
+        "subtitle": "lazy import",
+        "type": "async",
+        "traceId": "router"
+      },
+      {
+        "id": "catalog",
+        "step": 5,
+        "x": 405,
+        "y": 180,
+        "title": "Catalog",
+        "subtitle": "DI + Signals",
+        "type": "sync",
+        "traceId": "catalog"
+      },
+      {
+        "id": "oninit",
+        "step": 6,
+        "x": 215,
+        "y": 180,
+        "title": "ngOnInit",
+        "subtitle": "lifecycle",
+        "type": "sync",
+        "traceId": "oninit"
+      },
+      {
+        "id": "load",
+        "step": 7,
+        "x": 25,
+        "y": 180,
+        "title": "loadProducts",
+        "subtitle": "subscribe",
+        "type": "sync",
+        "traceId": "load"
+      },
+      {
+        "id": "service",
+        "step": 8,
+        "x": 25,
+        "y": 320,
+        "title": "ProductService",
+        "subtitle": "cria GET",
+        "type": "sync",
+        "traceId": "service"
+      },
+      {
+        "id": "interceptor",
+        "step": 9,
+        "x": 215,
+        "y": 320,
+        "title": "Interceptor",
+        "subtitle": "next(request)",
+        "type": "sync",
+        "traceId": "interceptor"
+      },
+      {
+        "id": "http",
+        "step": 9,
+        "x": 405,
+        "y": 320,
+        "title": "HTTP / API",
+        "subtitle": "aguarda resposta",
+        "type": "async",
+        "traceId": "http"
+      },
+      {
+        "id": "signals",
+        "step": 10,
+        "x": 595,
+        "y": 320,
+        "title": "Signals",
+        "subtitle": "estado muda",
+        "type": "reactive",
+        "scenarios": ["success", "empty"],
+        "traceId": "signals"
+      },
+      {
+        "id": "view",
+        "step": 11,
+        "x": 805,
+        "y": 320,
+        "title": "Template",
+        "subtitle": "@if + @for",
+        "type": "reactive",
+        "scenarios": ["success", "error"],
+        "traceId": "view"
+      },
+      {
+        "id": "error",
+        "step": 10,
+        "x": 405,
+        "y": 460,
+        "title": "Error Signal",
+        "subtitle": "ramo de falha",
+        "type": "error",
+        "scenarios": ["error"],
+        "traceId": "error"
+      },
+      {
+        "id": "empty",
+        "step": 11,
+        "x": 595,
+        "y": 460,
+        "title": "Empty State",
+        "subtitle": "sucesso vazio",
+        "type": "reactive",
+        "scenarios": ["empty"],
+        "traceId": "empty"
+      },
+      {
+        "id": "card",
+        "step": 11,
+        "x": 805,
+        "y": 460,
+        "title": "ProductCard",
+        "subtitle": "@Input",
+        "type": "reactive",
+        "scenarios": ["success"],
+        "traceId": "card"
+      },
+      {
+        "id": "reentry",
+        "step": 12,
+        "x": 25,
+        "y": 500,
+        "title": "Retry / página",
+        "subtitle": "evento futuro",
+        "type": "sync",
+        "traceId": "reentry"
+      }
+    ],
+    "edges": [
+      {
+        "from": "html",
+        "to": "bootstrap",
+        "step": 1,
+        "type": "sync"
+      },
+      {
+        "from": "bootstrap",
+        "to": "providers",
+        "step": 2,
+        "type": "sync"
+      },
+      {
+        "from": "providers",
+        "to": "shell",
+        "step": 3,
+        "type": "sync"
+      },
+      {
+        "from": "shell",
+        "to": "header",
+        "step": 3,
+        "type": "parallel"
+      },
+      {
+        "from": "shell",
+        "to": "cart",
+        "step": 3,
+        "type": "parallel"
+      },
+      {
+        "from": "shell",
+        "to": "router",
+        "step": 4,
+        "type": "sync"
+      },
+      {
+        "from": "router",
+        "to": "catalog",
+        "step": 5,
+        "type": "async"
+      },
+      {
+        "from": "catalog",
+        "to": "oninit",
+        "step": 6,
+        "type": "sync"
+      },
+      {
+        "from": "oninit",
+        "to": "load",
+        "step": 7,
+        "type": "sync"
+      },
+      {
+        "from": "load",
+        "to": "service",
+        "step": 8,
+        "type": "sync"
+      },
+      {
+        "from": "service",
+        "to": "interceptor",
+        "step": 9,
+        "type": "sync"
+      },
+      {
+        "from": "interceptor",
+        "to": "http",
+        "step": 9,
+        "type": "async"
+      },
+      {
+        "from": "http",
+        "to": "signals",
+        "step": 10,
+        "type": "async",
+        "scenarios": ["success", "empty"]
+      },
+      {
+        "from": "http",
+        "to": "error",
+        "step": 10,
+        "type": "error",
+        "scenarios": ["error"]
+      },
+      {
+        "from": "signals",
+        "to": "view",
+        "step": 11,
+        "type": "reactive",
+        "scenarios": ["success"]
+      },
+      {
+        "from": "view",
+        "to": "card",
+        "step": 11,
+        "type": "reactive",
+        "scenarios": ["success"]
+      },
+      {
+        "from": "signals",
+        "to": "empty",
+        "step": 11,
+        "type": "reactive",
+        "scenarios": ["empty"]
+      },
+      {
+        "from": "card",
+        "to": "reentry",
+        "step": 12,
+        "type": "sync",
+        "scenarios": ["success"]
+      },
+      {
+        "from": "empty",
+        "to": "reentry",
+        "step": 12,
+        "type": "sync",
+        "scenarios": ["empty"]
+      },
+      {
+        "from": "error",
+        "to": "reentry",
+        "step": 12,
+        "type": "error",
+        "scenarios": ["error"]
+      },
+      {
+        "from": "reentry",
+        "to": "load",
+        "step": 12,
+        "type": "sync",
+        "loop": true
+      }
+    ]
+  },
+  "sources": {
+    "html": {
+      "path": "apps/storefront/src/index.html",
+      "language": "html",
+      "origin": "application",
+      "segments": [
+        {
+          "startLine": 1,
+          "lines": [
+            "<!doctype html>",
+            "<html lang=\"pt-PT\">",
+            "  <head>",
+            "    <meta charset=\"utf-8\" />",
+            "    <title>Soares Store</title>",
+            "    <base href=\"/\" />",
+            "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />",
+            "    <link rel=\"icon\" type=\"image/x-icon\" href=\"favicon.ico\" />",
+            "    <script src=\"config.js\"></script>",
+            "    <link rel=\"preconnect\" href=\"https://fonts.googleapis.com\" />",
+            "    <link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin />",
+            "    <link",
+            "      href=\"https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap\"",
+            "      rel=\"stylesheet\"",
+            "    />",
+            "    <link href=\"https://fonts.googleapis.com/icon?family=Material+Icons\" rel=\"stylesheet\" />",
+            "  </head>",
+            "  <body>",
+            "    <app-root></app-root>",
+            "  </body>"
+          ]
+        }
+      ]
+    },
+    "main": {
+      "path": "apps/storefront/src/main.ts",
+      "language": "typescript",
+      "origin": "application",
+      "segments": [
+        {
+          "startLine": 1,
+          "lines": [
+            "import { bootstrapApplication } from '@angular/platform-browser';",
+            "import { appConfig } from './app/app.config';",
+            "import { App } from './app/app';",
+            "",
+            "bootstrapApplication(App, appConfig).catch((err) => console.error(err));"
+          ]
+        }
+      ]
+    },
+    "config": {
+      "path": "apps/storefront/src/app/app.config.ts",
+      "language": "typescript",
+      "origin": "application",
+      "segments": [
+        {
+          "startLine": 1,
+          "lines": [
+            "import { provideHttpClient, withInterceptors } from '@angular/common/http';",
+            "import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';",
+            "import { provideRouter, withInMemoryScrolling } from '@angular/router';",
+            "",
+            "import { routes } from './app.routes';",
+            "import { authInterceptor } from './core/auth/auth.interceptor';",
+            "",
+            "export const appConfig: ApplicationConfig = {",
+            "  providers: [",
+            "    provideBrowserGlobalErrorListeners(),",
+            "    provideHttpClient(withInterceptors([authInterceptor])),",
+            "    provideRouter(",
+            "      routes,",
+            "      withInMemoryScrolling({",
+            "        anchorScrolling: 'enabled',",
+            "        scrollPositionRestoration: 'enabled',",
+            "      }),",
+            "    ),",
+            "  ],",
+            "};"
+          ]
+        }
+      ]
+    },
+    "app": {
+      "path": "apps/storefront/src/app/app.ts",
+      "language": "typescript",
+      "origin": "application",
+      "segments": [
+        {
+          "startLine": 1,
+          "lines": [
+            "import { Component } from '@angular/core';",
+            "import { RouterOutlet } from '@angular/router';",
+            "import { FooterComponent } from './layout/footer.component';",
+            "import { HeaderComponent } from './layout/header.component';",
+            "import { ToastContainerComponent } from './shared/toast/toast-container.component';",
+            "import { CartComponent } from './features/cart/cart.component';",
+            "",
+            "@Component({",
+            "  selector: 'app-root',",
+            "  imports: [HeaderComponent, FooterComponent, RouterOutlet, ToastContainerComponent, CartComponent],",
+            "  templateUrl: './app.html',",
+            "  styleUrl: './app.scss',",
+            "})",
+            "export class App {}"
+          ]
+        }
+      ]
+    },
+    "shell": {
+      "path": "apps/storefront/src/app/app.html",
+      "language": "html",
+      "origin": "application",
+      "segments": [
+        {
+          "startLine": 1,
+          "lines": [
+            "<a class=\"skip-link\" href=\"#main-content\">Saltar para o conteúdo</a>",
+            "",
+            "<app-header />",
+            "<app-cart />",
+            "",
+            "<div id=\"main-content\" class=\"shell-main\" tabindex=\"-1\">",
+            "  <router-outlet />",
+            "</div>",
+            "",
+            "<app-footer />",
+            "<app-toast-container />"
+          ]
+        }
+      ]
+    },
+    "routes": {
+      "path": "apps/storefront/src/app/app.routes.ts",
+      "language": "typescript",
+      "origin": "application",
+      "segments": [
+        {
+          "startLine": 5,
+          "lines": [
+            "export const routes: Routes = [",
+            "  {",
+            "    path: '',",
+            "    loadComponent: () =>",
+            "      import('./features/home/home.component').then((module) => module.HomeComponent),",
+            "  },",
+            "  {",
+            "    path: 'produtos',",
+            "    loadComponent: () =>",
+            "      import('./features/catalog/catalog.component').then((module) => module.CatalogComponent),",
+            "  },",
+            "  {"
+          ]
+        }
+      ]
+    },
+    "catalog": {
+      "path": "apps/storefront/src/app/features/catalog/catalog.component.ts",
+      "language": "typescript",
+      "origin": "application",
+      "segments": [
+        {
+          "startLine": 11,
+          "lines": [
+            "@Component({",
+            "  selector: 'app-catalog',",
+            "  standalone: true,",
+            "  imports: [",
+            "    CommonModule,",
+            "    MatCardModule,",
+            "    MatPaginatorModule,",
+            "    RouterLink,",
+            "    ProductCardComponent,",
+            "    CustomIdeaSectionComponent,",
+            "  ],",
+            "  template: `",
+            "    <main class=\"catalog-page page-shell\">"
+          ]
+        },
+        {
+          "startLine": 32,
+          "lines": [
+            "      @if (loading()) {",
+            "        <div class=\"skeleton-grid\" aria-busy=\"true\" aria-label=\"A carregar produtos\">",
+            "          @for (item of [1, 2, 3, 4, 5, 6, 7, 8]; track item) {",
+            "            <mat-card class=\"skeleton-card\" aria-hidden=\"true\">",
+            "              <div class=\"skeleton-image skeleton-block\"></div>",
+            "              <mat-card-content>",
+            "                <div class=\"skeleton-title skeleton-block\"></div>",
+            "                <div class=\"skeleton-price skeleton-block\"></div>",
+            "              </mat-card-content>",
+            "            </mat-card>",
+            "          }",
+            "        </div>",
+            "      } @else if (error()) {",
+            "        <section class=\"feedback-state\" role=\"alert\">",
+            "          <div class=\"feedback-state__content\">",
+            "            <p class=\"page-eyebrow\">Liga&ccedil;&atilde;o interrompida</p>",
+            "            <h2>N&atilde;o foi poss&iacute;vel carregar o cat&aacute;logo</h2>",
+            "            <p>{{ error() }}</p>",
+            "            <button class=\"button button--primary\" type=\"button\" (click)=\"retry()\">",
+            "              Tentar novamente",
+            "            </button>",
+            "          </div>",
+            "        </section>",
+            "      } @else if (products().length === 0) {",
+            "        <section class=\"feedback-state\">",
+            "          <div class=\"feedback-state__content\">",
+            "            <p class=\"page-eyebrow\">Cat&aacute;logo em atualiza&ccedil;&atilde;o</p>",
+            "            <h2>Nenhum produto publicado no momento</h2>",
+            "            <p>",
+            "              Volte em breve para descobrir as pr&oacute;ximas pe&ccedil;as da",
+            "              cole&ccedil;&atilde;o.",
+            "            </p>",
+            "            <a class=\"button button--secondary\" routerLink=\"/\">Voltar ao in&iacute;cio</a>",
+            "          </div>",
+            "        </section>",
+            "      } @else {",
+            "        <div class=\"catalog-meta\" aria-live=\"polite\">",
+            "          <p>{{ totalElements() }} {{ totalElements() === 1 ? 'produto' : 'produtos' }}</p>",
+            "        </div>",
+            "",
+            "        <div class=\"products-grid\">",
+            "          @for (product of products(); track product.id) {",
+            "            <app-product-card [product]=\"product\"></app-product-card>",
+            "          }",
+            "        </div>",
+            "",
+            "        <mat-paginator",
+            "          [length]=\"totalElements()\"",
+            "          [pageSize]=\"pageSize()\"",
+            "          [pageSizeOptions]=\"[12, 24, 48]\"",
+            "          [pageIndex]=\"pageIndex()\"",
+            "          (page)=\"handlePageEvent($event)\"",
+            "          aria-label=\"Selecionar p&aacute;gina\"",
+            "        />",
+            "      }",
+            "",
+            "      <app-custom-idea-section />",
+            "    </main>",
+            "  `,",
+            "  styleUrls: ['./catalog.component.scss'],"
+          ]
+        },
+        {
+          "startLine": 93,
+          "lines": [
+            "export class CatalogComponent implements OnInit {",
+            "  private readonly productService = inject(ProductService);",
+            "",
+            "  readonly loading = signal(true);",
+            "  readonly error = signal<string | null>(null);",
+            "  readonly products = signal<PublicProduct[]>([]);",
+            "  readonly totalElements = signal(0);",
+            "  readonly pageSize = signal(12);",
+            "  readonly pageIndex = signal(0);",
+            "",
+            "  ngOnInit(): void {",
+            "    this.loadProducts(this.pageIndex(), this.pageSize());",
+            "  }",
+            "",
+            "  loadProducts(page: number, size: number): void {",
+            "    this.loading.set(true);",
+            "    this.error.set(null);",
+            "    this.productService.getPublicProducts(page, size).subscribe({",
+            "      next: (res) => {",
+            "        this.products.set(res.content);",
+            "        this.totalElements.set(res.totalElements);",
+            "        this.pageIndex.set(res.page);",
+            "        this.pageSize.set(res.size);",
+            "        this.loading.set(false);",
+            "      },",
+            "      error: () => {",
+            "        this.error.set('Verifique a ligacao e tente novamente.');",
+            "        this.loading.set(false);",
+            "      },",
+            "    });",
+            "  }",
+            "",
+            "  retry(): void {",
+            "    this.loadProducts(this.pageIndex(), this.pageSize());",
+            "  }",
+            "",
+            "  handlePageEvent(event: PageEvent): void {",
+            "    this.loadProducts(event.pageIndex, event.pageSize);",
+            "  }",
+            "}"
+          ]
+        }
+      ]
+    },
+    "service": {
+      "path": "apps/storefront/src/app/core/services/product.service.ts",
+      "language": "typescript",
+      "origin": "application",
+      "segments": [
+        {
+          "startLine": 1,
+          "lines": [
+            "import { inject, Injectable, signal } from '@angular/core';",
+            "import { HttpClient } from '@angular/common/http';",
+            "import { RUNTIME_CONFIG } from '../config/runtime-config';",
+            "import { Product, ProductRequest, ProductImage } from '../models/product.model';",
+            "import { PublicProduct } from '../models/public-product.model';",
+            "import { PaginatedResponse } from '../models/paginated-response.model';",
+            "import { firstValueFrom, Observable } from 'rxjs';",
+            "",
+            "@Injectable({ providedIn: 'root' })",
+            "export class ProductService {",
+            "  private readonly http = inject(HttpClient);",
+            "  private readonly config = inject(RUNTIME_CONFIG);"
+          ]
+        },
+        {
+          "startLine": 53,
+          "lines": [
+            "  getPublicProducts(page = 0, size = 12): Observable<PaginatedResponse<PublicProduct>> {",
+            "    return this.http.get<PaginatedResponse<PublicProduct>>(",
+            "      `${this.config.apiBaseUrl}/api/products`,",
+            "      {",
+            "        params: { page, size },",
+            "      },",
+            "    );",
+            "  }",
+            ""
+          ]
+        }
+      ]
+    },
+    "runtime": {
+      "path": "apps/storefront/src/app/core/config/runtime-config.ts",
+      "language": "typescript",
+      "origin": "application",
+      "segments": [
+        {
+          "startLine": 15,
+          "lines": [
+            "const values = window.__SOARES_STORE_CONFIG__ ?? {};",
+            "",
+            "export const RUNTIME_CONFIG = new InjectionToken<RuntimeConfig>('RUNTIME_CONFIG', {",
+            "  providedIn: 'root',",
+            "  factory: () => ({",
+            "    supabaseUrl: values.supabaseUrl ?? '',",
+            "    supabaseAnonKey: values.supabaseAnonKey ?? '',",
+            "    apiBaseUrl: values.apiBaseUrl ?? '',",
+            "  }),",
+            "});"
+          ]
+        }
+      ]
+    },
+    "interceptor": {
+      "path": "apps/storefront/src/app/core/auth/auth.interceptor.ts",
+      "language": "typescript",
+      "origin": "application",
+      "segments": [
+        {
+          "startLine": 1,
+          "lines": [
+            "import { HttpInterceptorFn } from '@angular/common/http';",
+            "import { inject } from '@angular/core';",
+            "import { RUNTIME_CONFIG } from '../config/runtime-config';",
+            "import { AuthService } from './auth.service';",
+            "",
+            "export const authInterceptor: HttpInterceptorFn = (request, next) => {",
+            "  const config = inject(RUNTIME_CONFIG);",
+            "  const token = inject(AuthService).accessToken();",
+            "  if (!token || !config.apiBaseUrl || !request.url.startsWith(config.apiBaseUrl)) {",
+            "    return next(request);",
+            "  }",
+            "  return next(",
+            "    request.clone({",
+            "      setHeaders: { Authorization: `Bearer ${token}` },",
+            "    }),",
+            "  );",
+            "};"
+          ]
+        }
+      ]
+    },
+    "card": {
+      "path": "apps/storefront/src/app/shared/ui/product-card/product-card.component.ts",
+      "language": "typescript",
+      "origin": "application",
+      "segments": [
+        {
+          "startLine": 7,
+          "lines": [
+            "@Component({",
+            "  selector: 'app-product-card',",
+            "  standalone: true,",
+            "  imports: [CommonModule, RouterLink],",
+            "  template: `",
+            "    <a",
+            "      class=\"product-card\"",
+            "      [routerLink]=\"['/produtos', product.slug]\"",
+            "      [attr.aria-label]=\"'Ver detalhes de ' + product.name\"",
+            "    >",
+            "      <div class=\"image-container\">",
+            "        @if (product.images && product.images.length > 0) {"
+          ]
+        },
+        {
+          "startLine": 40,
+          "lines": [
+            "      <div class=\"product-content\">",
+            "        <h3 class=\"product-name\">{{ product.name }}</h3>",
+            "        <p class=\"product-description\">{{ product.description }}</p>",
+            "        <div class=\"product-footer\">",
+            "          <span class=\"product-price\">",
+            "            {{ product.price.amount | currency: product.price.currency : 'symbol' : '1.2-2' }}",
+            "          </span>",
+            "          <span class=\"card-link\">Ver detalhes</span>",
+            "        </div>",
+            "      </div>",
+            "    </a>",
+            "  `,",
+            "  styleUrls: ['./product-card.component.scss'],",
+            "})",
+            "export class ProductCardComponent {",
+            "  @Input({ required: true }) product!: PublicProduct;",
+            ""
+          ]
+        }
+      ]
+    },
+    "header": {
+      "path": "apps/storefront/src/app/layout/header.component.ts",
+      "language": "typescript",
+      "origin": "application",
+      "segments": [
+        {
+          "startLine": 26,
+          "lines": [
+            "export class HeaderComponent {",
+            "  private readonly auth = inject(AuthService);",
+            "  private readonly http = inject(HttpClient);",
+            "  private readonly config = inject(RUNTIME_CONFIG);",
+            "  private readonly cartStateService = inject(CartStateService);",
+            "",
+            "  readonly authenticated = this.auth.authenticated;",
+            "  readonly menuOpen = signal(false);",
+            "  private readonly backendRole = signal<string | null>(null);",
+            "  readonly menuButtonLabel = computed(() =>",
+            "    this.menuOpen() ? 'Fechar menu de navegação' : 'Abrir menu de navegação',",
+            "  );",
+            "",
+            "  constructor() {",
+            "    effect(() => {",
+            "      if (this.auth.authenticated() && this.auth.role() !== 'CUSTOMER') {",
+            "        this.http.get<{ role: string }>(`${this.config.apiBaseUrl}/api/account/role`).subscribe({",
+            "          next: (res) => this.backendRole.set(res.role),",
+            "          error: () => this.backendRole.set(null),",
+            "        });",
+            "      } else {",
+            "        this.backendRole.set(null);",
+            "      }",
+            "    });"
+          ]
+        }
+      ]
+    },
+    "cart": {
+      "path": "apps/storefront/src/app/features/cart/cart.component.ts",
+      "language": "typescript",
+      "origin": "application",
+      "segments": [
+        {
+          "startLine": 28,
+          "lines": [
+            "  public cartState = inject(CartStateService);",
+            "  public config = inject(RUNTIME_CONFIG);",
+            "  private previouslyFocused: HTMLElement | null = null;",
+            "  private wasOpen = false;",
+            "",
+            "  constructor() {",
+            "    effect(() => {",
+            "      const isOpen = this.cartState.isDrawerOpen();",
+            "      if (isOpen && !this.wasOpen) {",
+            "        this.previouslyFocused = document.activeElement as HTMLElement | null;",
+            "        queueMicrotask(() => this.closeButton?.nativeElement.focus());",
+            "      } else if (!isOpen && this.wasOpen) {",
+            "        queueMicrotask(() => this.previouslyFocused?.focus());",
+            "      }",
+            "      this.wasOpen = isOpen;",
+            "    });",
+            "  }",
+            "",
+            "  ngOnInit(): void {",
+            "    this.cartState.loadCart();",
+            "  }"
+          ]
+        }
+      ]
+    },
+    "auth": {
+      "path": "apps/storefront/src/app/core/auth/auth.service.ts",
+      "language": "typescript",
+      "origin": "application",
+      "segments": [
+        {
+          "startLine": 8,
+          "lines": [
+            "@Injectable({ providedIn: 'root' })",
+            "export class AuthService {",
+            "  private readonly clientProvider = inject(SupabaseClientProvider);",
+            "  private readonly sessionState = signal<Session | null>(null);",
+            "  readonly session = this.sessionState.asReadonly();",
+            "  readonly authenticated = computed(() => this.sessionState() !== null);",
+            "  readonly role = computed(() => {",
+            "    const session = this.sessionState();",
+            "    return session?.user?.app_metadata?.['role'] ?? session?.user?.user_metadata?.['role'] ?? null;",
+            "  });",
+            "",
+            "  constructor() {",
+            "    this.initialize();",
+            "  }",
+            "",
+            "  private initialize(): void {",
+            "    try {",
+            "      const client = this.clientProvider.get();",
+            "      void client.auth.getSession().then(({ data }) => this.sessionState.set(data.session));",
+            "      client.auth.onAuthStateChange((_event, session) => this.sessionState.set(session));",
+            "    } catch {",
+            "      this.sessionState.set(null);",
+            "    }"
+          ]
+        },
+        {
+          "startLine": 79,
+          "lines": [
+            "  accessToken(): string | null {",
+            "    return this.sessionState()?.access_token ?? null;",
+            "  }"
+          ]
+        }
+      ]
+    },
+    "rxjs": {
+      "path": "node_modules/rxjs/src/internal/Observable.ts",
+      "language": "typescript",
+      "origin": "dependency",
+      "segments": [
+        {
+          "startLine": 1,
+          "lines": [
+            "import { Operator } from './Operator';",
+            "import { SafeSubscriber, Subscriber } from './Subscriber';",
+            "import { isSubscription, Subscription } from './Subscription';",
+            "import { TeardownLogic, OperatorFunction, Subscribable, Observer } from './types';",
+            "import { observable as Symbol_observable } from './symbol/observable';",
+            "import { pipeFromArray } from './util/pipe';",
+            "import { config } from './config';",
+            "import { isFunction } from './util/isFunction';",
+            "import { errorContext } from './util/errorContext';",
+            "",
+            "/**",
+            " * A representation of any set of values over any amount of time. This is the most basic building block",
+            " * of RxJS.",
+            " */",
+            "export class Observable<T> implements Subscribable<T> {",
+            "  /**",
+            "   * @deprecated Internal implementation detail, do not use directly. Will be made internal in v8.",
+            "   */",
+            "  source: Observable<any> | undefined;",
+            "",
+            "  /**",
+            "   * @deprecated Internal implementation detail, do not use directly. Will be made internal in v8.",
+            "   */",
+            "  operator: Operator<any, T> | undefined;",
+            "",
+            "  /**",
+            "   * @param subscribe The function that is called when the Observable is",
+            "   * initially subscribed to. This function is given a Subscriber, to which new values",
+            "   * can be `next`ed, or an `error` method can be called to raise an error, or",
+            "   * `complete` can be called to notify of a successful completion.",
+            "   */",
+            "  constructor(subscribe?: (this: Observable<T>, subscriber: Subscriber<T>) => TeardownLogic) {",
+            "    if (subscribe) {",
+            "      this._subscribe = subscribe;",
+            "    }",
+            "  }",
+            "",
+            "  // HACK: Since TypeScript inherits static properties too, we have to",
+            "  // fight against TypeScript here so Subject can have a different static create signature",
+            "  /**",
+            "   * Creates a new Observable by calling the Observable constructor",
+            "   * @param subscribe the subscriber function to be passed to the Observable constructor",
+            "   * @return A new observable.",
+            "   * @deprecated Use `new Observable()` instead. Will be removed in v8."
+          ]
+        },
+        {
+          "startLine": 65,
+          "lines": [
+            "  }",
+            "",
+            "  subscribe(observerOrNext?: Partial<Observer<T>> | ((value: T) => void)): Subscription;",
+            "  /** @deprecated Instead of passing separate callback arguments, use an observer argument. Signatures taking separate callback arguments will be removed in v8. Details: https://rxjs.dev/deprecations/subscribe-arguments */",
+            "  subscribe(next?: ((value: T) => void) | null, error?: ((error: any) => void) | null, complete?: (() => void) | null): Subscription;",
+            "  /**"
+          ]
+        },
+        {
+          "startLine": 204,
+          "lines": [
+            "  subscribe(",
+            "    observerOrNext?: Partial<Observer<T>> | ((value: T) => void) | null,",
+            "    error?: ((error: any) => void) | null,",
+            "    complete?: (() => void) | null",
+            "  ): Subscription {",
+            "    const subscriber = isSubscriber(observerOrNext) ? observerOrNext : new SafeSubscriber(observerOrNext, error, complete);",
+            "",
+            "    errorContext(() => {",
+            "      const { operator, source } = this;",
+            "      subscriber.add(",
+            "        operator",
+            "          ? // We're dealing with a subscription in the",
+            "            // operator chain to one of our lifted operators.",
+            "            operator.call(subscriber, source)",
+            "          : source",
+            "          ? // If `source` has a value, but `operator` does not, something that",
+            "            // had intimate knowledge of our API, like our `Subject`, must have",
+            "            // set it. We're going to just call `_subscribe` directly.",
+            "            this._subscribe(subscriber)",
+            "          : // In all other cases, we're likely wrapping a user-provided initializer",
+            "            // function, so we need to catch errors and handle them appropriately.",
+            "            this._trySubscribe(subscriber)",
+            "      );",
+            "    });",
+            "",
+            "    return subscriber;",
+            "  }"
+          ]
+        }
+      ],
+      "package": "rxjs",
+      "version": "7.8.2",
+      "runtimeSourceId": "rxjsjs"
+    },
+    "rxjsjs": {
+      "path": "node_modules/rxjs/dist/esm/internal/Observable.js",
+      "language": "javascript",
+      "origin": "dependency",
+      "segments": [
+        {
+          "startLine": 8,
+          "lines": [
+            "export class Observable {",
+            "    constructor(subscribe) {",
+            "        if (subscribe) {",
+            "            this._subscribe = subscribe;",
+            "        }",
+            "    }",
+            "    lift(operator) {",
+            "        const observable = new Observable();",
+            "        observable.source = this;",
+            "        observable.operator = operator;",
+            "        return observable;",
+            "    }",
+            "    subscribe(observerOrNext, error, complete) {",
+            "        const subscriber = isSubscriber(observerOrNext) ? observerOrNext : new SafeSubscriber(observerOrNext, error, complete);",
+            "        errorContext(() => {",
+            "            const { operator, source } = this;",
+            "            subscriber.add(operator",
+            "                ?",
+            "                    operator.call(subscriber, source)",
+            "                : source",
+            "                    ?",
+            "                        this._subscribe(subscriber)",
+            "                    :",
+            "                        this._trySubscribe(subscriber));",
+            "        });",
+            "        return subscriber;",
+            "    }"
+          ]
+        }
+      ],
+      "package": "rxjs",
+      "version": "7.8.2"
+    },
+    "http": {
+      "path": "node_modules/@angular/common/fesm2022/_module-chunk.mjs",
+      "language": "javascript",
+      "origin": "dependency",
+      "segments": [
+        {
+          "startLine": 1472,
+          "lines": [
+            "class HttpClient {",
+            "  handler;",
+            "  constructor(handler) {",
+            "    this.handler = handler;",
+            "  }",
+            "  request(first, url, options = {}) {"
+          ]
+        },
+        {
+          "startLine": 1518,
+          "lines": [
+            "    const events$ = of(req).pipe(concatMap(req => this.handler.handle(req)));",
+            "    if (first instanceof HttpRequest || options.observe === 'events') {",
+            "      return events$;",
+            "    }",
+            "    const res$ = events$.pipe(filter(event => event instanceof HttpResponse));",
+            "    switch (options.observe || 'body') {",
+            "      case 'body':"
+          ]
+        },
+        {
+          "startLine": 1540,
+          "lines": [
+            "          case 'text':",
+            "            return res$.pipe(map(res => {",
+            "              if (res.body !== null && typeof res.body !== 'string') {",
+            "                throw new _RuntimeError(2808, ngDevMode && 'Response is not a string.');",
+            "              }",
+            "              return res.body;",
+            "            }));",
+            "          case 'json':",
+            "          default:",
+            "            return res$.pipe(map(res => res.body));",
+            "        }",
+            "      case 'response':",
+            "        return res$;",
+            "      default:",
+            "        throw new _RuntimeError(2809, ngDevMode && `Unreachable: unhandled observe type ${options.observe}}`);",
+            "    }"
+          ]
+        },
+        {
+          "startLine": 1560,
+          "lines": [
+            "  get(url, options = {}) {",
+            "    return this.request('GET', url, options);",
+            "  }"
+          ]
+        }
+      ],
+      "package": "@angular/common",
+      "version": "21.2.18"
+    },
+    "signal": {
+      "path": "node_modules/@angular/core/fesm2022/_effect-chunk.mjs",
+      "language": "javascript",
+      "origin": "dependency",
+      "segments": [
+        {
+          "startLine": 340,
+          "lines": [
+            "function createSignal(initialValue, equal) {",
+            "  const node = Object.create(SIGNAL_NODE);",
+            "  node.value = initialValue;",
+            "  if (equal !== undefined) {",
+            "    node.equal = equal;",
+            "  }",
+            "  const getter = () => signalGetFn(node);",
+            "  getter[SIGNAL] = node;",
+            "  if (typeof ngDevMode !== 'undefined' && ngDevMode) {",
+            "    getter.toString = () => `[Signal${node.debugName ? ' (' + node.debugName + ')' : ''}: ${String(node.value)}]`;",
+            "  }",
+            "  runPostProducerCreatedFn(node);",
+            "  const set = newValue => signalSetFn(node, newValue);",
+            "  const update = updateFn => signalUpdateFn(node, updateFn);",
+            "  return [getter, set, update];"
+          ]
+        },
+        {
+          "startLine": 361,
+          "lines": [
+            "function signalGetFn(node) {",
+            "  producerAccessed(node);",
+            "  return node.value;",
+            "}",
+            "function signalSetFn(node, newValue) {",
+            "  if (!producerUpdatesAllowed()) {",
+            "    throwInvalidWriteToSignalError(node);",
+            "  }",
+            "  if (!node.equal(node.value, newValue)) {",
+            "    node.value = newValue;",
+            "    signalValueChanged(node);",
+            "  }",
+            "}"
+          ]
+        },
+        {
+          "startLine": 391,
+          "lines": [
+            "function signalValueChanged(node) {",
+            "  node.version++;",
+            "  producerIncrementEpoch();",
+            "  producerNotifyConsumers(node);",
+            "  postSignalSetFn?.(node);",
+            "}"
+          ]
+        }
+      ],
+      "package": "@angular/core",
+      "version": "21.2.18"
+    },
+    "manifest": {
+      "path": "apps/storefront/package.json",
+      "language": "json",
+      "origin": "application",
+      "segments": [
+        {
+          "startLine": 19,
+          "lines": [
+            "    \"@angular/cdk\": \"21.2.14\",",
+            "    \"@angular/common\": \"21.2.18\",",
+            "    \"@angular/compiler\": \"21.2.18\",",
+            "    \"@angular/core\": \"21.2.18\",",
+            "    \"@angular/forms\": \"21.2.18\",",
+            "    \"@angular/material\": \"21.2.14\",",
+            "    \"@angular/platform-browser\": \"21.2.18\",",
+            "    \"@angular/router\": \"21.2.18\",",
+            "    \"@supabase/supabase-js\": \"^2.108.2\",",
+            "    \"rxjs\": \"7.8.2\",",
+            "    \"tslib\": \"2.8.1\"",
+            "  },",
+            "  \"devDependencies\": {",
+            "    \"@angular/build\": \"21.2.19\",",
+            "    \"@angular/cli\": \"21.2.19\",",
+            "    \"@angular/compiler-cli\": \"21.2.18\","
+          ]
+        }
+      ]
+    },
+    "cartstate": {
+      "path": "apps/storefront/src/app/features/cart/data-access/cart-state.service.ts",
+      "language": "typescript",
+      "origin": "application",
+      "segments": [
+        {
+          "startLine": 62,
+          "lines": [
+            "  loadCart(options: { clearItemErrors?: boolean } = {}): void {",
+            "    const { clearItemErrors = true } = options;",
+            "    this.loadingState.set(true);",
+            "    this.errorState.set(null);",
+            "    if (clearItemErrors) {",
+            "      this.itemErrorState.set({});",
+            "    }",
+            "    this.cartService.getCart().subscribe({",
+            "      next: (res) => {",
+            "        this.state.set(res);",
+            "        this.loadingState.set(false);",
+            "      },",
+            "      error: () => {",
+            "        this.errorState.set('Não foi possível carregar o carrinho.');",
+            "        this.loadingState.set(false);",
+            "      },",
+            "    });",
+            "  }",
+            ""
+          ]
+        }
+      ]
+    }
+  },
+  "terms": {
+    "instance": {
+      "label": "Instância e referência",
+      "category": "Objeto em memória",
+      "definition": "Classe é a declaração que descreve dados e métodos. Instância é um objeto criado a partir dela; referência é o valor usado pelo programa para acessar esse objeto.",
+      "usage": "O campo productService do catálogo guarda uma referência ao objeto ProductService. this.productService.getPublicProducts(0, 12) usa esse objeto para chamar o método, sem abrir ou executar um arquivo com esse nome.",
+      "sourceId": "catalog",
+      "line": 94
+    },
+    "this": {
+      "label": "this",
+      "category": "Referência da chamada",
+      "definition": "Dentro destes métodos, this aponta para a instância de CatalogComponent que recebeu a chamada.",
+      "usage": "this.loading e this.productService são campos dessa instância.",
+      "sourceId": "catalog",
+      "line": 108
+    },
+    "method": {
+      "label": "Método",
+      "category": "Função em uma classe",
+      "definition": "É uma função definida como parte de uma classe, chamada por meio de um objeto.",
+      "usage": "getPublicProducts pertence a ProductService; loadProducts pertence a CatalogComponent.",
+      "sourceId": "service",
+      "line": 53
+    },
+    "page": {
+      "label": "page / size",
+      "category": "Parâmetros e argumentos",
+      "definition": "Parâmetro é o nome na declaração; argumento é o valor entregue na chamada. page indica o índice da página, size a quantidade por página.",
+      "usage": "Na primeira busca: page=0 e size=12; {params:{page,size}} leva isso à URL.",
+      "sourceId": "service",
+      "line": 53
+    },
+    "inject": {
+      "label": "inject(...)",
+      "category": "Função do Angular",
+      "definition": "inject(...) é uma função do Angular que pede um objeto já registrado, ou cria esse objeto quando necessário. Ela devolve o objeto para o código poder usá-lo.",
+      "usage": "inject(ProductService) fornece o objeto guardado em productService. Isso prepara a chamada posterior a getPublicProducts; obter o objeto não chama esse método nem busca produtos.",
+      "sourceId": "catalog",
+      "line": 94
+    },
+    "injectable": {
+      "label": "@Injectable",
+      "category": "Decorador do Angular",
+      "definition": "Metadado que permite ao Angular resolver a classe como dependência. providedIn:'root' disponibiliza a receita no injector raiz.",
+      "usage": "ProductService centraliza HTTP; o decorador não dispara suas consultas.",
+      "sourceId": "service",
+      "line": 9
+    },
+    "component": {
+      "label": "@Component",
+      "category": "Decorador do Angular",
+      "definition": "Um componente reúne uma classe com os dados e ações da tela e um template, o trecho que diz ao Angular o que mostrar. @Component associa essas partes e informa o nome da tag que pode representar o componente.",
+      "usage": "App usa a tag app-root na página inicial. CatalogComponent guarda loading, error e products e informa o HTML que mostra carregamento, falha ou produtos.",
+      "sourceId": "app",
+      "line": 8
+    },
+    "bootstrap": {
+      "label": "bootstrapApplication",
+      "category": "Função de inicialização",
+      "definition": "bootstrapApplication é a função que inicia a aplicação Angular: recebe o componente principal e as configurações, prepara os objetos necessários e cria esse primeiro componente.",
+      "usage": "main.ts chama bootstrapApplication(App, appConfig). Sem iniciar a aplicação, Angular não criaria App nem poderia colocar a página do catálogo dentro dele. O retorno é uma Promise, que permite acompanhar se a inicialização terminou ou falhou.",
+      "sourceId": "main",
+      "line": 5
+    },
+    "provider": {
+      "label": "Provider",
+      "category": "Receita de DI",
+      "definition": "Provider é uma configuração que indica ao Angular como obter um objeto necessário ao programa. Registrar essa configuração permite pedir o objeto depois; não chama todos os seus métodos.",
+      "usage": "provideHttpClient registra como obter HttpClient para enviar pedidos HTTP. provideRouter registra Router para escolher a página a partir da URL. Sem esses registros, inject não conseguiria obter essas dependências por essa configuração.",
+      "sourceId": "config",
+      "line": 9
+    },
+    "router": {
+      "label": "Router / router-outlet",
+      "category": "Serviço e diretiva",
+      "definition": "Router é a parte do Angular que escolhe qual componente mostrar a partir do endereço da página. RouterOutlet marca no HTML onde a página escolhida deve aparecer.",
+      "usage": "A rota produtos associa o endereço /produtos ao carregamento de CatalogComponent. O elemento router-outlet de App é o lugar onde Angular coloca essa página; escolher a página ainda não busca os produtos.",
+      "sourceId": "shell",
+      "line": 7
+    },
+    "promise": {
+      "label": "Promise / import(...)",
+      "category": "Objeto e carregamento JS",
+      "definition": "Promise representa uma conclusão futura; import(...) carrega um módulo JS e resolve com seu namespace.",
+      "usage": "loadComponent obtém a classe da página, não os produtos.",
+      "sourceId": "routes",
+      "line": 13
+    },
+    "oninit": {
+      "label": "ngOnInit",
+      "category": "Hook de ciclo de vida",
+      "definition": "Método que Angular chama uma vez depois de inicializar os inputs do componente.",
+      "usage": "Inicia loadProducts com os valores atuais de paginação.",
+      "sourceId": "catalog",
+      "line": 103
+    },
+    "signal": {
+      "label": "Signal / .set(...)",
+      "category": "Estado reativo Angular",
+      "definition": "Signal guarda um valor que o Angular pode acompanhar. Chamar o Signal lê esse valor; chamar seu método set substitui o valor. Angular usa as leituras acompanhadas para atualizar a tela quando ele muda.",
+      "usage": "signal([]) cria products com uma lista vazia; products() lê a lista. products.set(res.content) a troca pelos produtos recebidos. loading() e error() guardam, respectivamente, se a busca está em andamento e qual mensagem de falha mostrar.",
+      "sourceId": "catalog",
+      "line": 96
+    },
+    "http": {
+      "label": "HttpClient.get",
+      "category": "Método do cliente Angular",
+      "definition": "HttpClient é o objeto do Angular usado para pedir ou enviar dados por HTTP. Seu método get prepara um pedido de leitura e devolve um Observable, pelo qual o resultado poderá ser recebido.",
+      "usage": "ProductService monta o endereço com apiBaseUrl e /api/products e envia page e size como parâmetros. Neste GET, chamar subscribe no Observable ativa o pedido; provideHttpClient apenas registra como obter HttpClient.",
+      "sourceId": "http",
+      "line": 1560
+    },
+    "observable": {
+      "label": "Observable",
+      "category": "Classe da biblioteca RxJS",
+      "definition": "Observable é um objeto pelo qual um código pode receber valores, uma falha ou o aviso de que o envio de valores terminou. Ele não é a lista pronta e nem todo Observable faz rede ou espera uma resposta futura.",
+      "usage": "Aqui, HttpClient.get devolve um Observable do pedido de produtos. O catálogo chama subscribe para ativar esse pedido e indicar o que fazer com a resposta ou a falha. Depois da rede, a função next recebe o objeto res, cuja propriedade content contém os produtos.",
+      "sourceId": "rxjs",
+      "line": 15
+    },
+    "subscribe": {
+      "label": "subscribe({...})",
+      "category": "Método de Observable",
+      "definition": "subscribe é o método chamado no Observable para indicar quais funções receberão os valores ou a falha. Ele devolve uma Subscription, objeto cujo método unsubscribe permite encerrar esse acompanhamento.",
+      "usage": "Neste GET do HttpClient, subscribe também ativa o pedido HTTP. As funções next e error ficam registradas; a lista só chega depois em res.content. O retorno imediato de subscribe é a Subscription, não os produtos.",
+      "sourceId": "rxjs",
+      "line": 204
+    },
+    "overload": {
+      "label": "Sobrecarga TypeScript",
+      "category": "Declaração de tipo",
+      "definition": "Assinatura sem corpo que informa ao compilador as formas aceitas de uma chamada. Não executa em runtime.",
+      "usage": "Observable.ts:67 descreve subscribe; o corpo começa em :204.",
+      "sourceId": "rxjs",
+      "line": 67
+    },
+    "callback": {
+      "label": "next / error",
+      "category": "Funções callback",
+      "definition": "Callback é uma função entregue a outro código para que ele a chame no momento adequado. Entregar a função não significa executar suas instruções naquele instante.",
+      "usage": "O catálogo entrega next: (res) => {...} e error: () => {...} ao subscribe. Quando a resposta chega, next recebe res e atualiza os produtos; se o pedido falha, error grava a mensagem. Esses nomes de função não são os Signals products e error.",
+      "sourceId": "catalog",
+      "line": 111
+    },
+    "arrow": {
+      "label": "Arrow function",
+      "category": "Sintaxe JavaScript",
+      "definition": "Forma de escrever uma função que captura lexicalmente this do contexto onde foi criada.",
+      "usage": "next:(res)=>{...} mantém acesso ao componente.",
+      "sourceId": "catalog",
+      "line": 111
+    },
+    "interceptor": {
+      "label": "authInterceptor / next(request)",
+      "category": "Função da cadeia HTTP",
+      "definition": "Inspeciona/transfere requisições. next(request) entrega o request à próxima etapa.",
+      "usage": "Visitante sem token segue sem Authorization; backend decide a autorização.",
+      "sourceId": "interceptor",
+      "line": 6
+    },
+    "token": {
+      "label": "RUNTIME_CONFIG",
+      "category": "InjectionToken",
+      "definition": "Aqui, token de injeção é um identificador usado para registrar e pedir um valor ao Angular. RUNTIME_CONFIG identifica o objeto de configurações públicas; não é um token de login.",
+      "usage": "inject(RUNTIME_CONFIG) obtém o objeto que contém apiBaseUrl. ProductService usa esse endereço para montar o destino de /api/products. O arquivo config.js fornece os valores públicos que serão lidos por essa configuração.",
+      "sourceId": "runtime",
+      "line": 17
+    },
+    "type": {
+      "label": "Tipos e genéricos",
+      "category": "Informação de compilação",
+      "definition": "Descrevem valores aceitos pelo TypeScript; não validam JSON por si só e são removidos do JS.",
+      "usage": "Observable<PaginatedResponse<PublicProduct>> descreve o formato esperado.",
+      "sourceId": "service",
+      "line": 53
+    },
+    "template": {
+      "label": "@if / @for / track",
+      "category": "Controle de template",
+      "definition": "Template é o trecho de HTML com instruções que o Angular avalia para montar e atualizar a tela. @if escolhe o bloco a mostrar e @for repete um trecho para cada item de uma lista.",
+      "usage": "Angular lê loading(), error() e products() para escolher carregamento, falha, lista vazia ou produtos. @for percorre a lista de products(); track product.id identifica cada produto para manter o card correspondente quando a lista muda.",
+      "sourceId": "catalog",
+      "line": 73
+    },
+    "input": {
+      "label": "@Input / [product]",
+      "category": "Entrada e binding",
+      "definition": "Input é uma entrada de dados declarada em um componente. O componente que o contém fornece um valor a essa entrada; o componente filho usa esse valor para mostrar seu conteúdo.",
+      "usage": "Em app-product-card, [product]=\"product\" entrega ao campo product do card o objeto da iteração atual. O card lê nome e preço desse objeto; não precisa fazer outro GET para cada produto.",
+      "sourceId": "card",
+      "line": 55
+    },
+    "event": {
+      "label": "(click) / (page)",
+      "category": "Event binding",
+      "definition": "Registra a reação a um evento futuro. O método associado só executa quando o evento ocorre.",
+      "usage": "retry ou paginação reutilizam loadProducts.",
+      "sourceId": "catalog",
+      "line": 83
+    },
+    "package": {
+      "label": "Pacote e node_modules",
+      "category": "Dependência instalada",
+      "definition": "package.json declara dependências; npm instala/resolva-as, podendo compartilhar node_modules na raiz do workspace.",
+      "usage": "rxjs 7.8.2 está declarado no storefront e resolvido em node_modules/rxjs; o bundler inclui o JS na aplicação.",
+      "sourceId": "manifest",
+      "line": 28
+    }
+  },
+  "frames": {
+    "html-base": {
+      "sourceId": "html",
+      "line": 6,
+      "label": "URLs têm uma raiz",
+      "explanation": "<base href='/'> fornece a base das URLs relativas. O navegador interpreta a tag; ela não é uma função Angular.",
+      "kind": "declaration",
+      "termIds": []
+    },
+    "html-config": {
+      "sourceId": "html",
+      "line": 9,
+      "label": "Configuração pública antes do bootstrap",
+      "explanation": "O script config.js é carregado por uma tag sem async/defer; o navegador executa o script nesse ponto do parse. Os valores públicos serão lidos pelo token RUNTIME_CONFIG.",
+      "kind": "execute",
+      "termIds": ["token"]
+    },
+    "html-host": {
+      "sourceId": "html",
+      "line": 19,
+      "label": "Host disponível",
+      "explanation": "app-root é um elemento vazio que será usado pelo selector de App. A tag por si só não cria uma instância Angular.",
+      "kind": "declaration",
+      "termIds": ["component"]
+    },
+    "boot-call": {
+      "sourceId": "main",
+      "line": 5,
+      "label": "Entregar classe e configuração",
+      "explanation": "bootstrapApplication é uma função do Angular. Os argumentos são a classe App e o objeto appConfig; Angular controla a criação da instância e do injector.",
+      "kind": "call",
+      "termIds": ["bootstrap", "instance"],
+      "target": {
+        "sourceId": "config",
+        "line": 8
+      },
+      "stack": ["main.ts", "bootstrapApplication(App, appConfig)"]
+    },
+    "boot-app": {
+      "sourceId": "app",
+      "line": 8,
+      "label": "Localizar o componente raiz",
+      "explanation": "O decorador @Component descreve os metadados de App. O build transforma esses metadados; o runtime usa a definição compilada. Não tratamos o decorador como uma nova chamada em cada navegação.",
+      "kind": "declaration",
+      "termIds": ["component"]
+    },
+    "boot-promise": {
+      "sourceId": "main",
+      "line": 5,
+      "label": "Observar falha do bootstrap",
+      "explanation": "A Promise retornada recebe .catch. Esse callback só executa se o bootstrap rejeitar, não quando um GET posterior falha.",
+      "kind": "register",
+      "termIds": ["promise", "callback"]
+    },
+    "config-object": {
+      "sourceId": "config",
+      "line": 8,
+      "label": "Um objeto de configuração",
+      "explanation": "appConfig é um objeto ApplicationConfig, não uma classe nem componente. Sua lista providers registra receitas para o injector.",
+      "kind": "declaration",
+      "termIds": ["provider"]
+    },
+    "config-http": {
+      "sourceId": "config",
+      "line": 11,
+      "label": "Registrar cliente e interceptor",
+      "explanation": "provideHttpClient configura a dependência HttpClient; withInterceptors acrescenta authInterceptor à cadeia. Aqui ainda não existe GET do catálogo.",
+      "kind": "register",
+      "termIds": ["http", "interceptor"]
+    },
+    "config-router": {
+      "sourceId": "config",
+      "line": 12,
+      "label": "Registrar navegação",
+      "explanation": "provideRouter recebe routes; as opções de scrolling configuram a navegação. Registrar routes não executa todos os loaders.",
+      "kind": "register",
+      "termIds": ["router"]
+    },
+    "app-selector": {
+      "sourceId": "app",
+      "line": 9,
+      "label": "Ligar App ao host",
+      "explanation": "selector:'app-root' identifica o elemento da página-base que hospeda a view raiz.",
+      "kind": "declaration",
+      "termIds": ["component"],
+      "target": {
+        "sourceId": "html",
+        "line": 19
+      }
+    },
+    "app-imports": {
+      "sourceId": "app",
+      "line": 10,
+      "label": "Dependências de template",
+      "explanation": "imports disponibiliza Header, Cart, RouterOutlet e outros elementos para o template. Não é a injeção de ProductService.",
+      "kind": "declaration",
+      "termIds": ["component", "inject"]
+    },
+    "shell-header": {
+      "sourceId": "shell",
+      "line": 3,
+      "label": "Criar o ramo do header",
+      "explanation": "Angular cria HeaderComponent. A dependência AuthService pode iniciar recuperação de sessão; o fim desse trabalho não é pré-requisito do catálogo.",
+      "kind": "parallel",
+      "termIds": ["instance"],
+      "choices": [
+        {
+          "label": "Header/Auth: trabalho independente",
+          "description": "Inspecione o nó Header/Auth para a inicialização da sessão.",
+          "nodeId": "header"
+        },
+        {
+          "label": "Catálogo: segue pela rota",
+          "description": "O Router continua sem esperar a sessão.",
+          "nodeId": "router"
+        }
+      ]
+    },
+    "shell-cart": {
+      "sourceId": "shell",
+      "line": 4,
+      "label": "Criar o ramo do carrinho",
+      "explanation": "Angular cria CartComponent; seu ngOnInit inicia loadCart. As respostas de carrinho e catálogo podem chegar em ordens diferentes.",
+      "kind": "parallel",
+      "termIds": ["oninit"],
+      "target": {
+        "sourceId": "cart",
+        "line": 46
+      }
+    },
+    "shell-outlet": {
+      "sourceId": "shell",
+      "line": 7,
+      "label": "Ponto de inserção da rota",
+      "explanation": "RouterOutlet recebe a view escolhida pelo Router. Este arquivo compõe a UI; a consulta de produtos pertence ao componente da rota.",
+      "kind": "render",
+      "termIds": ["router"]
+    },
+    "header-di": {
+      "sourceId": "header",
+      "line": 27,
+      "label": "Resolver AuthService",
+      "explanation": "O campo auth recebe a instância de AuthService. Se ainda não existir no injector, Angular a cria e seu construtor chama initialize.",
+      "kind": "call",
+      "termIds": ["inject", "instance"],
+      "target": {
+        "sourceId": "auth",
+        "line": 19
+      }
+    },
+    "auth-init": {
+      "sourceId": "auth",
+      "line": 20,
+      "label": "Entrar na inicialização da sessão",
+      "explanation": "this.initialize() chama um método da mesma instância. Esse ramo pertence à autenticação do shell.",
+      "kind": "call",
+      "termIds": ["this", "method"],
+      "target": {
+        "sourceId": "auth",
+        "line": 23
+      }
+    },
+    "auth-session": {
+      "sourceId": "auth",
+      "line": 26,
+      "label": "Agendar atualização futura",
+      "explanation": "getSession retorna uma Promise; then registra o callback que escreverá a sessão. void descarta o valor retornado da expressão, sem esperar a Promise.",
+      "kind": "async",
+      "termIds": ["promise", "callback"],
+      "stack": [
+        "HeaderComponent → inject(AuthService)",
+        "AuthService.initialize"
+      ],
+      "variables": [
+        {
+          "name": "sessão inicial",
+          "value": "null (visitante sem login)"
+        }
+      ]
+    },
+    "auth-listener": {
+      "sourceId": "auth",
+      "line": 27,
+      "label": "Registrar eventos de autenticação",
+      "explanation": "onAuthStateChange registra outra reação futura. A chamada segue; nenhuma barreira impede a consulta pública de produtos.",
+      "kind": "register",
+      "termIds": ["callback"]
+    },
+    "header-condition": {
+      "sourceId": "header",
+      "line": 41,
+      "label": "Condição do papel do usuário",
+      "explanation": "No cenário visitante, authenticated é false; o ramo HTTP de role não executa. O else escreve null em backendRole quando o effect avalia a condição.",
+      "kind": "condition",
+      "termIds": ["signal"],
+      "choices": [
+        {
+          "label": "Visitante: else",
+          "description": "GET /api/account/role não é disparado."
+        },
+        {
+          "label": "Autenticado elegível: GET",
+          "description": "Outro cenário de sessão, fora do cenário público adotado."
+        }
+      ]
+    },
+    "cart-di": {
+      "sourceId": "cart",
+      "line": 28,
+      "label": "Estado independente de carrinho",
+      "explanation": "cartState guarda a instância de CartStateService. Não é o mesmo estado do CatalogComponent.",
+      "kind": "call",
+      "termIds": ["inject", "instance"]
+    },
+    "cart-init": {
+      "sourceId": "cart",
+      "line": 47,
+      "label": "Iniciar busca do carrinho",
+      "explanation": "No ngOnInit, loadCart chama o service do carrinho. Essa operação é independente do GET de produtos.",
+      "kind": "call",
+      "termIds": ["oninit", "method"],
+      "target": {
+        "sourceId": "cartstate",
+        "line": 62
+      }
+    },
+    "cart-subscribe": {
+      "sourceId": "cartstate",
+      "line": 69,
+      "label": "Subscription em outro ramo",
+      "explanation": "getCart().subscribe registra next/error para carrinho. A rede deste ramo pode responder antes ou depois do catálogo.",
+      "kind": "async",
+      "termIds": ["subscribe", "callback"],
+      "stack": ["CartComponent.ngOnInit", "CartStateService.loadCart"]
+    },
+    "route-path": {
+      "sourceId": "routes",
+      "line": 12,
+      "label": "Comparar a URL",
+      "explanation": "path:'produtos' corresponde ao segmento /produtos. Esta rota não declara canActivate.",
+      "kind": "condition",
+      "termIds": ["router"]
+    },
+    "route-loader": {
+      "sourceId": "routes",
+      "line": 13,
+      "label": "Loader declarado",
+      "explanation": "loadComponent guarda uma função. A função é chamada quando Router precisa ativar a rota, não apenas por existir no objeto.",
+      "kind": "register",
+      "termIds": ["promise"]
+    },
+    "route-import": {
+      "sourceId": "routes",
+      "line": 14,
+      "label": "Esperar o código da página",
+      "explanation": "import(...) devolve uma Promise do namespace do módulo JavaScript. then obtém module.CatalogComponent para o Router criar a página. A API de produtos ainda não foi consultada.",
+      "kind": "async",
+      "termIds": ["promise", "instance"],
+      "target": {
+        "sourceId": "catalog",
+        "line": 93
+      }
+    },
+    "catalog-meta": {
+      "sourceId": "catalog",
+      "line": 11,
+      "label": "Metadados da página",
+      "explanation": "@Component descreve selector, standalone e recursos do template. A instanciação é controlada pelo Angular.",
+      "kind": "declaration",
+      "termIds": ["component"]
+    },
+    "catalog-di": {
+      "sourceId": "catalog",
+      "line": 94,
+      "label": "Campo productService",
+      "explanation": "inject(ProductService) resolve o objeto; private limita acesso no TypeScript e readonly impede trocar a referência do campo. Nenhum método HTTP é chamado nesta linha.",
+      "kind": "call",
+      "termIds": ["inject", "instance"],
+      "target": {
+        "sourceId": "service",
+        "line": 10
+      }
+    },
+    "service-di": {
+      "sourceId": "service",
+      "line": 11,
+      "label": "Dependências do service",
+      "explanation": "O campo http de ProductService recebe o objeto HttpClient registrado em appConfig, que será usado para enviar o pedido de produtos. O campo config recebe o objeto identificado por RUNTIME_CONFIG; seu apiBaseUrl será combinado com /api/products para formar o endereço desse pedido. Esta linha prepara esses objetos; ainda não envia o GET.",
+      "kind": "call",
+      "termIds": ["http", "token"]
+    },
+    "signal-loading": {
+      "sourceId": "catalog",
+      "line": 96,
+      "label": "Inicializar loading",
+      "explanation": "signal(true) cria o estado reativo. Este valor indica o carregamento inicial. readonly não impede loading.set(...).",
+      "kind": "execute",
+      "termIds": ["signal"],
+      "variables": [
+        {
+          "name": "loading",
+          "value": "true"
+        }
+      ]
+    },
+    "signal-error": {
+      "sourceId": "catalog",
+      "line": 97,
+      "label": "Inicializar erro",
+      "explanation": "signal<string|null>(null) começa sem mensagem de erro. O genérico ajuda o compilador; null é o valor runtime.",
+      "kind": "execute",
+      "termIds": ["signal", "type"],
+      "variables": [
+        {
+          "name": "error",
+          "value": "null"
+        }
+      ]
+    },
+    "signal-products": {
+      "sourceId": "catalog",
+      "line": 98,
+      "label": "Inicializar produtos",
+      "explanation": "signal([]) cria products com uma lista vazia. products() permite ler essa lista e products.set(...) permite substituí-la depois. PublicProduct[] indica ao TypeScript que a lista deve conter produtos; não cria produtos nem valida a resposta HTTP. Essa lista inicial permite mostrar a tela antes de a resposta chegar.",
+      "kind": "execute",
+      "termIds": ["signal", "type"],
+      "variables": [
+        {
+          "name": "products",
+          "value": "[]"
+        }
+      ]
+    },
+    "signal-total": {
+      "sourceId": "catalog",
+      "line": 99,
+      "label": "Contagem inicial",
+      "explanation": "totalElements guarda a quantidade total informada pela API, que inicialmente é desconhecida e representada por 0.",
+      "kind": "execute",
+      "termIds": ["signal"]
+    },
+    "signal-size": {
+      "sourceId": "catalog",
+      "line": 100,
+      "label": "Tamanho da página",
+      "explanation": "pageSize começa em 12 itens por requisição.",
+      "kind": "execute",
+      "termIds": ["page"]
+    },
+    "signal-index": {
+      "sourceId": "catalog",
+      "line": 101,
+      "label": "Índice da página",
+      "explanation": "pageIndex começa em 0: a primeira página usa índice zero.",
+      "kind": "execute",
+      "termIds": ["page"]
+    },
+    "oninit-entry": {
+      "sourceId": "catalog",
+      "line": 103,
+      "label": "Angular entra no hook",
+      "explanation": "ngOnInit é um método da instância do componente; implements OnInit é apenas o contrato TypeScript. Angular controla quando chamar o hook.",
+      "kind": "call",
+      "termIds": ["oninit"],
+      "stack": ["Angular lifecycle", "CatalogComponent.ngOnInit"]
+    },
+    "oninit-call": {
+      "sourceId": "catalog",
+      "line": 104,
+      "label": "Ler argumentos antes de chamar",
+      "explanation": "this.pageIndex() lê 0 e this.pageSize() lê 12; depois this.loadProducts(0,12) entra no método da mesma instância.",
+      "kind": "call",
+      "termIds": ["this", "signal", "page", "method"],
+      "target": {
+        "sourceId": "catalog",
+        "line": 107
+      },
+      "variables": [
+        {
+          "name": "page",
+          "value": "0"
+        },
+        {
+          "name": "size",
+          "value": "12"
+        }
+      ]
+    },
+    "load-entry": {
+      "sourceId": "catalog",
+      "line": 107,
+      "label": "Receber page e size",
+      "explanation": "loadProducts é um método; page:number e size:number descrevem parâmetros, void descreve ausência de retorno útil. Tipos não executam. A chamada entra no corpo com 0 e 12.",
+      "kind": "call",
+      "termIds": ["method", "page", "type"],
+      "stack": ["CatalogComponent.ngOnInit", "CatalogComponent.loadProducts"]
+    },
+    "load-loading": {
+      "sourceId": "catalog",
+      "line": 108,
+      "label": "Ativar carregamento",
+      "explanation": "this aponta para o catálogo atual; loading é seu Signal; set(true) escreve o valor. Na primeira busca ele já é true, então a igualdade padrão pode evitar notificação redundante.",
+      "kind": "execute",
+      "termIds": ["this", "signal"],
+      "variables": [
+        {
+          "name": "loading",
+          "value": "true → true (primeira carga)"
+        }
+      ]
+    },
+    "load-clear": {
+      "sourceId": "catalog",
+      "line": 109,
+      "label": "Limpar erro anterior",
+      "explanation": "error é outro Signal. set(null) retira mensagem de falha anterior; não é o callback error da subscription.",
+      "kind": "execute",
+      "termIds": ["signal"],
+      "variables": [
+        {
+          "name": "error",
+          "value": "null"
+        }
+      ]
+    },
+    "load-call": {
+      "sourceId": "catalog",
+      "line": 110,
+      "label": "Entrar no método do service",
+      "explanation": "Primeiro avalia this.productService.getPublicProducts(page,size): o campo guarda uma referência à instância de ProductService; o método recebe os argumentos 0 e 12. .subscribe ainda aguarda o retorno do método.",
+      "kind": "call",
+      "termIds": ["this", "instance", "method", "page"],
+      "target": {
+        "sourceId": "service",
+        "line": 53
+      },
+      "stack": [
+        "CatalogComponent.loadProducts",
+        "ProductService.getPublicProducts"
+      ]
+    },
+    "service-entry": {
+      "sourceId": "service",
+      "line": 53,
+      "label": "Entrar em getPublicProducts",
+      "explanation": "Este é o método da classe ProductService. Os defaults 0 e 12 só seriam aplicados se argumentos fossem omitidos/undefined. Nesta chamada já vieram 0 e 12.",
+      "kind": "call",
+      "termIds": ["method", "page", "type"],
+      "stack": [
+        "CatalogComponent.loadProducts",
+        "ProductService.getPublicProducts"
+      ],
+      "variables": [
+        {
+          "name": "page",
+          "value": "0"
+        },
+        {
+          "name": "size",
+          "value": "12"
+        }
+      ]
+    },
+    "service-get": {
+      "sourceId": "service",
+      "line": 54,
+      "label": "Selecionar HttpClient.get e avaliar os argumentos",
+      "explanation": "this agora é a instância de ProductService. http é o campo com HttpClient. Antes de entrar em get, JavaScript avalia a URL e o objeto de opções descritos nas próximas linhas.",
+      "kind": "call",
+      "termIds": ["http", "type"],
+      "target": {
+        "sourceId": "http",
+        "line": 1560
+      }
+    },
+    "service-url": {
+      "sourceId": "service",
+      "line": 55,
+      "label": "Compor URL de destino",
+      "explanation": "A template string combina config.apiBaseUrl com /api/products. RUNTIME_CONFIG fornece a base; não mostramos credenciais.",
+      "kind": "execute",
+      "termIds": ["token"]
+    },
+    "service-params": {
+      "sourceId": "service",
+      "line": 57,
+      "label": "Adicionar parâmetros",
+      "explanation": "{params:{page,size}} usa propriedades abreviadas: page:page, size:size. HttpClient serializa as opções em query parameters.",
+      "kind": "execute",
+      "termIds": ["page"],
+      "variables": [
+        {
+          "name": "query",
+          "value": "?page=0&size=12"
+        }
+      ]
+    },
+    "http-get": {
+      "sourceId": "http",
+      "line": 1561,
+      "label": "Implementação instalada de get",
+      "explanation": "No JavaScript de @angular/common 21.2.18, get delega a request('GET',url,options). O arquivo é distribuído pelo pacote; o bundler o inclui no bundle do navegador.",
+      "kind": "call",
+      "termIds": ["http", "package"],
+      "target": {
+        "sourceId": "http",
+        "line": 1477
+      }
+    },
+    "http-observable": {
+      "sourceId": "http",
+      "line": 1518,
+      "label": "Descrever a cadeia fria",
+      "explanation": "of(req).pipe(concatMap(...)) monta uma cadeia Observable. this.handler.handle(req) será acionado pela subscription, não por simplesmente montar a cadeia.",
+      "kind": "register",
+      "termIds": ["observable", "http"]
+    },
+    "service-return": {
+      "sourceId": "catalog",
+      "line": 110,
+      "label": "Voltar ao chamador com o Observable",
+      "explanation": "getPublicProducts retorna o objeto Observable a esta expressão. Agora .subscribe é procurado nesse objeto, não no service.",
+      "kind": "return",
+      "termIds": ["observable", "subscribe"],
+      "target": {
+        "sourceId": "rxjs",
+        "line": 204
+      },
+      "stack": ["CatalogComponent.loadProducts"]
+    },
+    "rxjs-type": {
+      "sourceId": "rxjs",
+      "line": 67,
+      "label": "Consultar a assinatura de tipo",
+      "explanation": "Esta linha é uma sobrecarga TypeScript de subscribe sem corpo. Ela é evidência para os tipos aceitos, e não uma instrução executada na chamada.",
+      "kind": "declaration",
+      "termIds": ["overload", "subscribe", "package"],
+      "target": {
+        "sourceId": "rxjs",
+        "line": 204
+      }
+    },
+    "rxjs-body": {
+      "sourceId": "rxjs",
+      "line": 204,
+      "label": "Entrar no corpo de subscribe",
+      "explanation": "Observable vem de rxjs 7.8.2, declarado no storefront e instalado em node_modules/rxjs da raiz. O corpo TypeScript começa aqui; o navegador roda sua versão JavaScript/bundle.",
+      "kind": "call",
+      "termIds": ["observable", "subscribe", "package"],
+      "target": {
+        "sourceId": "rxjsjs",
+        "line": 20
+      },
+      "stack": ["CatalogComponent.loadProducts", "Observable.subscribe"]
+    },
+    "rxjs-observer": {
+      "sourceId": "rxjs",
+      "line": 209,
+      "label": "Construir um observador seguro",
+      "explanation": "O objeto com next/error passa como observerOrNext. RxJS cria SafeSubscriber quando não recebeu um Subscriber existente; os corpos dos callbacks ainda não rodaram.",
+      "kind": "execute",
+      "termIds": ["callback", "subscribe"]
+    },
+    "rxjs-chain": {
+      "sourceId": "rxjs",
+      "line": 213,
+      "label": "Ativar a cadeia de operadores",
+      "explanation": "subscriber.add(...) conecta a lógica de assinatura/operadores e registra sua limpeza. As ramificações operator/source/_trySubscribe pertencem à cadeia RxJS, não aos cenários de sucesso/erro HTTP.",
+      "kind": "call",
+      "termIds": ["subscribe"],
+      "choices": [
+        {
+          "label": "operator presente",
+          "description": "operator.call(subscriber,source): continuação da cadeia."
+        },
+        {
+          "label": "source presente",
+          "description": "_subscribe(subscriber): fonte já encadeada."
+        },
+        {
+          "label": "fonte inicial",
+          "description": "_trySubscribe(subscriber): invoca inicializador protegido."
+        }
+      ]
+    },
+    "rxjs-return": {
+      "sourceId": "rxjs",
+      "line": 229,
+      "label": "Receber a Subscription",
+      "explanation": "subscribe retorna o subscriber (também uma Subscription). CatalogComponent não guarda esse retorno nesta implementação; a resposta HTTP virá posteriormente.",
+      "kind": "return",
+      "termIds": ["subscribe"],
+      "stack": ["CatalogComponent.loadProducts"]
+    },
+    "load-callback-context": {
+      "sourceId": "catalog",
+      "line": 111,
+      "label": "Construir o objeto de observadores",
+      "explanation": "De volta ao catálogo, JavaScript avalia o argumento de subscribe: cria o objeto com arrow functions next/error. Essas funções capturam this do catálogo, mas seus corpos não executam aqui. Só depois esse objeto é entregue ao método subscribe.",
+      "kind": "register",
+      "termIds": ["callback", "arrow"]
+    },
+    "load-end": {
+      "sourceId": "catalog",
+      "line": 122,
+      "label": "Sair do método síncrono",
+      "explanation": "A expressão .subscribe({...}) foi chamada; loadProducts termina. A cadeia pode já ter despachado a rede durante subscribe. Este ponto não espera a resposta.",
+      "kind": "return",
+      "termIds": ["subscribe", "callback"]
+    },
+    "interceptor-entry": {
+      "sourceId": "interceptor",
+      "line": 6,
+      "label": "Entrar na função interceptadora",
+      "explanation": "authInterceptor é uma função registrada na cadeia HttpClient. request contém a requisição; next é a função que a encaminha.",
+      "kind": "call",
+      "termIds": ["interceptor"],
+      "stack": ["Observable.subscribe → cadeia HttpClient", "authInterceptor"]
+    },
+    "interceptor-config": {
+      "sourceId": "interceptor",
+      "line": 7,
+      "label": "Resolver a configuração",
+      "explanation": "inject(RUNTIME_CONFIG) fornece o objeto com apiBaseUrl para limitar onde anexar token.",
+      "kind": "call",
+      "termIds": ["inject", "token"]
+    },
+    "interceptor-token": {
+      "sourceId": "interceptor",
+      "line": 8,
+      "label": "Ler o token da sessão",
+      "explanation": "inject(AuthService) resolve o objeto; accessToken() chama seu método. Para visitante sem login, retorna null.",
+      "kind": "call",
+      "termIds": ["instance", "method"],
+      "target": {
+        "sourceId": "auth",
+        "line": 79
+      },
+      "variables": [
+        {
+          "name": "token",
+          "value": "null"
+        }
+      ]
+    },
+    "interceptor-branch": {
+      "sourceId": "interceptor",
+      "line": 9,
+      "label": "Escolher o ramo público",
+      "explanation": "!token é true. O operador || faz curto-circuito: esta expressão já é verdadeira. Não é preciso avaliar os demais testes para entrar no if.",
+      "kind": "condition",
+      "termIds": ["interceptor"],
+      "choices": [
+        {
+          "label": "Sem token → next(request)",
+          "description": "Ramo usado no cenário visitante."
+        },
+        {
+          "label": "Com token aplicável → clone",
+          "description": "Outro cenário de sessão: adiciona Bearer sem modificar o original."
+        }
+      ]
+    },
+    "interceptor-next": {
+      "sourceId": "interceptor",
+      "line": 10,
+      "label": "Encaminhar sem Authorization",
+      "explanation": "return next(request) entrega o mesmo request à etapa seguinte. É um Observable de eventos retornado pela cadeia, não um sinal de autorização do backend.",
+      "kind": "call",
+      "termIds": ["interceptor", "observable"]
+    },
+    "http-wait": {
+      "sourceId": "catalog",
+      "line": 110,
+      "label": "Subscription aguardando resultado",
+      "explanation": "A API é uma fronteira neste fluxo frontend. A resposta HTTP futura chamará next ou error. Esta linha identifica a subscription receptora; não é o código interno do transporte.",
+      "kind": "async",
+      "termIds": ["subscribe", "callback"],
+      "choices": [
+        {
+          "label": "HTTP 200 com itens",
+          "scenario": "success",
+          "description": "Notifica next; content tem produtos."
+        },
+        {
+          "label": "HTTP 200 sem itens",
+          "scenario": "empty",
+          "description": "Também notifica next; content é []."
+        },
+        {
+          "label": "Falha de transporte/status",
+          "scenario": "error",
+          "description": "Notifica error; não passa por next."
+        }
+      ],
+      "variables": [
+        {
+          "name": "loading",
+          "value": "true enquanto a rede aguarda"
+        }
+      ]
+    },
+    "response-next": {
+      "sourceId": "catalog",
+      "line": 111,
+      "label": "Notificação next chega",
+      "explanation": "RxJS entrega a resposta em res e entra na arrow function registrada anteriormente. Aqui começa uma continuação depois da rede.",
+      "kind": "callback",
+      "termIds": ["callback", "arrow"],
+      "scenarios": ["success", "empty"],
+      "stack": [
+        "Notificação HTTP pelo RxJS",
+        "callback next de CatalogComponent"
+      ]
+    },
+    "products-set": {
+      "sourceId": "catalog",
+      "line": 112,
+      "label": "Guardar content",
+      "explanation": "products guarda a lista que o catálogo apresenta. res.content é a lista de produtos recebida na resposta HTTP. products.set(res.content) troca a lista guardada por essa resposta, para que a próxima avaliação de products() no HTML obtenha os produtos novos.",
+      "kind": "execute",
+      "termIds": ["signal", "this"],
+      "scenarios": ["success", "empty"],
+      "variables": [
+        {
+          "name": "products",
+          "values": {
+            "success": "[] → [produtos]",
+            "empty": "[] → [] (resposta vazia)"
+          }
+        }
+      ],
+      "target": {
+        "sourceId": "signal",
+        "line": 365
+      }
+    },
+    "signal-compare": {
+      "sourceId": "signal",
+      "line": 369,
+      "label": "Comparar o valor anterior",
+      "explanation": "signalSetFn compara node.value e newValue com a igualdade configurada. Se forem iguais, não notifica uma mudança. Este é JavaScript instalado de @angular/core.",
+      "kind": "condition",
+      "termIds": ["signal", "package"],
+      "scenarios": ["success", "empty"]
+    },
+    "signal-write": {
+      "sourceId": "signal",
+      "line": 370,
+      "label": "Atualizar o nó reativo",
+      "explanation": "Se o valor difere, node.value recebe newValue. O renderer ainda não é chamado diretamente nesta instrução.",
+      "kind": "execute",
+      "termIds": ["signal"],
+      "scenarios": ["success", "empty"]
+    },
+    "signal-notify": {
+      "sourceId": "signal",
+      "line": 394,
+      "label": "Notificar consumidores dependentes",
+      "explanation": "signalValueChanged aumenta versão e notifica os consumidores que leram o Signal. Angular planeja/realiza atualização da view conforme seu mecanismo; não presumimos DOM instantâneo em .set.",
+      "kind": "reactive",
+      "termIds": ["signal", "template"],
+      "scenarios": ["success", "empty"]
+    },
+    "total-set": {
+      "sourceId": "catalog",
+      "line": 113,
+      "label": "Guardar o total",
+      "explanation": "totalElements recebe o total de itens da API, usado pelo texto e paginator.",
+      "kind": "execute",
+      "termIds": ["signal"],
+      "scenarios": ["success", "empty"]
+    },
+    "page-set": {
+      "sourceId": "catalog",
+      "line": 114,
+      "label": "Guardar a página respondida",
+      "explanation": "pageIndex recebe res.page, índice retornado pela API.",
+      "kind": "execute",
+      "termIds": ["signal", "page"],
+      "scenarios": ["success", "empty"]
+    },
+    "size-set": {
+      "sourceId": "catalog",
+      "line": 115,
+      "label": "Guardar tamanho respondido",
+      "explanation": "pageSize recebe res.size, tamanho retornado pela API.",
+      "kind": "execute",
+      "termIds": ["signal", "page"],
+      "scenarios": ["success", "empty"]
+    },
+    "loading-done": {
+      "sourceId": "catalog",
+      "line": 116,
+      "label": "Encerrar carregamento",
+      "explanation": "loading.set(false) permite ao template sair do skeleton na próxima avaliação.",
+      "kind": "execute",
+      "termIds": ["signal"],
+      "scenarios": ["success", "empty"],
+      "variables": [
+        {
+          "name": "loading",
+          "value": "true → false"
+        }
+      ]
+    },
+    "response-error": {
+      "sourceId": "catalog",
+      "line": 118,
+      "label": "Notificação error chega",
+      "explanation": "A operação HTTP falhou. RxJS entra no callback error deste Observable; o catch do bootstrap não participa.",
+      "kind": "callback",
+      "termIds": ["callback", "subscribe"],
+      "scenarios": ["error"],
+      "stack": [
+        "Notificação de falha HTTP",
+        "callback error de CatalogComponent"
+      ]
+    },
+    "error-set": {
+      "sourceId": "catalog",
+      "line": 119,
+      "label": "Escrever a mensagem de falha",
+      "explanation": "this.error é o Signal de apresentação; .set(...) grava texto para a view. Este campo não é a função callback error.",
+      "kind": "execute",
+      "termIds": ["this", "signal"],
+      "scenarios": ["error"],
+      "variables": [
+        {
+          "name": "error",
+          "value": "null → mensagem"
+        }
+      ]
+    },
+    "error-loading": {
+      "sourceId": "catalog",
+      "line": 120,
+      "label": "Sair do skeleton",
+      "explanation": "loading.set(false) encerra visualmente o carregamento e libera a seleção do ramo de erro.",
+      "kind": "execute",
+      "termIds": ["signal"],
+      "scenarios": ["error"],
+      "variables": [
+        {
+          "name": "loading",
+          "value": "true → false"
+        }
+      ]
+    },
+    "error-view": {
+      "sourceId": "catalog",
+      "line": 44,
+      "label": "Condição de falha no template",
+      "explanation": "Depois que loading() passa a false, error() possui mensagem; Angular escolhe este bloco na avaliação do template.",
+      "kind": "condition",
+      "termIds": ["template", "signal"],
+      "scenarios": ["error"]
+    },
+    "error-message": {
+      "sourceId": "catalog",
+      "line": 49,
+      "label": "Texto e anúncio acessível",
+      "explanation": "A interpolação lê error() e mostra a mensagem. role='alert', declarado na seção, anuncia a falha a tecnologias assistivas.",
+      "kind": "render",
+      "termIds": ["template"],
+      "scenarios": ["error"]
+    },
+    "error-retry": {
+      "sourceId": "catalog",
+      "line": 50,
+      "label": "Ação futura disponível",
+      "explanation": "(click)='retry()' registra o evento. Não repete a requisição sozinho.",
+      "kind": "register",
+      "termIds": ["event"],
+      "scenarios": ["error"],
+      "target": {
+        "sourceId": "catalog",
+        "line": 125
+      }
+    },
+    "view-loading": {
+      "sourceId": "catalog",
+      "line": 32,
+      "label": "Primeira condição",
+      "explanation": "Angular lê loading(). Enquanto true, skeleton; depois da resposta, false e a avaliação segue para os outros ramos.",
+      "kind": "condition",
+      "termIds": ["template", "signal"]
+    },
+    "view-error": {
+      "sourceId": "catalog",
+      "line": 44,
+      "label": "Teste de erro",
+      "explanation": "error() retorna null no sucesso/vazio e mensagem na falha. Um único ramo será renderizado.",
+      "kind": "condition",
+      "termIds": ["template", "signal"],
+      "choices": [
+        {
+          "label": "Mensagem de erro",
+          "scenario": "error",
+          "description": "O ramo de erro é selecionado."
+        },
+        {
+          "label": "Sem erro",
+          "scenario": "success",
+          "description": "Segue para teste de array vazio."
+        },
+        {
+          "label": "Sem erro e array vazio",
+          "scenario": "empty",
+          "description": "Segue para o empty state."
+        }
+      ]
+    },
+    "view-empty": {
+      "sourceId": "catalog",
+      "line": 55,
+      "label": "Teste de lista vazia",
+      "explanation": "products().length === 0 verifica o array de resposta. Vazio é sucesso sem itens, não erro.",
+      "kind": "condition",
+      "termIds": ["template"],
+      "scenarios": ["success", "empty"]
+    },
+    "view-loop": {
+      "sourceId": "catalog",
+      "line": 73,
+      "label": "Criar/reconciliar views dos itens",
+      "explanation": "@for percorre products(); track product.id fornece a identidade estável de cada view. Esses são recursos de template compilado, não funções JavaScript com esses nomes.",
+      "kind": "render",
+      "termIds": ["template"],
+      "scenarios": ["success"]
+    },
+    "view-input": {
+      "sourceId": "catalog",
+      "line": 74,
+      "label": "Binding para o filho",
+      "explanation": "[product]='product' passa o objeto da iteração atual à entrada do ProductCardComponent.",
+      "kind": "render",
+      "termIds": ["input"],
+      "scenarios": ["success"],
+      "target": {
+        "sourceId": "card",
+        "line": 55
+      }
+    },
+    "empty-text": {
+      "sourceId": "catalog",
+      "line": 59,
+      "label": "Renderizar o feedback vazio",
+      "explanation": "Este bloco informa que não existem produtos publicados. A condição correta é products().length===0, com loading=false e sem error.",
+      "kind": "render",
+      "termIds": ["template"],
+      "scenarios": ["empty"]
+    },
+    "card-input": {
+      "sourceId": "card",
+      "line": 55,
+      "label": "Receber objeto do pai",
+      "explanation": "@Input({required:true}) declara a entrada. product! é uma afirmação de atribuição definida para TypeScript; não cria produto nem valida JSON.",
+      "kind": "declaration",
+      "termIds": ["input", "type"]
+    },
+    "card-link": {
+      "sourceId": "card",
+      "line": 14,
+      "label": "Preparar navegação futura",
+      "explanation": "routerLink recebe segmentos e o slug do produto. A URL de detalhes só será navegada após o clique.",
+      "kind": "register",
+      "termIds": ["router", "event"]
+    },
+    "card-name": {
+      "sourceId": "card",
+      "line": 41,
+      "label": "Interpolar nome",
+      "explanation": "Angular avalia product.name do objeto recebido e insere texto na view do card.",
+      "kind": "render",
+      "termIds": ["input"]
+    },
+    "card-price": {
+      "sourceId": "card",
+      "line": 45,
+      "label": "Formatar preço",
+      "explanation": "currency é um pipe do Angular para apresentação. Ele recebe amount e currency e entrega texto formatado.",
+      "kind": "render",
+      "termIds": ["input"]
+    },
+    "event-choice": {
+      "sourceId": "catalog",
+      "line": 125,
+      "label": "Escolher a origem do evento",
+      "explanation": "Retry e paginator são duas entradas possíveis. A pilha didática distingue evento futuro de execução inicial.",
+      "kind": "future",
+      "termIds": ["event"],
+      "choices": [
+        {
+          "label": "Clique em retry",
+          "description": "Mantém índices atuais.",
+          "frameId": "retry-call",
+          "branch": "entry",
+          "value": "retry"
+        },
+        {
+          "label": "Evento page",
+          "description": "Usa novos índices do evento.",
+          "frameId": "page-event",
+          "branch": "entry",
+          "value": "page"
+        }
+      ]
+    },
+    "retry-call": {
+      "sourceId": "catalog",
+      "line": 126,
+      "label": "Reutilizar paginação atual",
+      "explanation": "retry() lê os Signals atuais e chama loadProducts novamente. Não reinicia main.ts nem cria todo o shell.",
+      "kind": "future",
+      "termIds": ["event", "signal"],
+      "target": {
+        "sourceId": "catalog",
+        "line": 107
+      },
+      "when": {
+        "entry": "retry"
+      }
+    },
+    "page-event": {
+      "sourceId": "catalog",
+      "line": 130,
+      "label": "Usar a paginação do evento",
+      "explanation": "handlePageEvent(event) lê event.pageIndex e event.pageSize enviados pelo paginator; esses novos valores viram argumentos de loadProducts.",
+      "kind": "future",
+      "termIds": ["event", "page"],
+      "target": {
+        "sourceId": "catalog",
+        "line": 107
+      },
+      "when": {
+        "entry": "page"
+      }
+    },
+    "event-restart": {
+      "sourceId": "catalog",
+      "line": 108,
+      "label": "Nova volta do mesmo método",
+      "explanation": "Após qualquer dessas entradas, o método reativa loading, limpa error e monta outro GET/subscription. A volta é indicada no grafo.",
+      "kind": "future",
+      "termIds": ["signal", "subscribe"]
+    }
+  },
+  "traces": {
+    "html": {
+      "label": "Página-base",
+      "frameIds": ["html-base", "html-config", "html-host"]
+    },
+    "bootstrap": {
+      "label": "Entrada e inicialização",
+      "frameIds": ["boot-call", "boot-app", "boot-promise"]
+    },
+    "providers": {
+      "label": "Providers globais",
+      "frameIds": ["config-object", "config-http", "config-router"]
+    },
+    "shell": {
+      "label": "Composição e ramificação",
+      "frameIds": [
+        "app-selector",
+        "app-imports",
+        "shell-header",
+        "shell-cart",
+        "shell-outlet"
+      ]
+    },
+    "header": {
+      "label": "Ramo paralelo da sessão",
+      "frameIds": [
+        "header-di",
+        "auth-init",
+        "auth-session",
+        "auth-listener",
+        "header-condition"
+      ]
+    },
+    "cart": {
+      "label": "Ramo paralelo do carrinho",
+      "frameIds": ["cart-di", "cart-init", "cart-subscribe"]
+    },
+    "router": {
+      "label": "Correspondência e lazy loading",
+      "frameIds": ["route-path", "route-loader", "route-import"]
+    },
+    "catalog": {
+      "label": "Construção da instância",
+      "frameIds": [
+        "catalog-meta",
+        "catalog-di",
+        "service-di",
+        "signal-loading",
+        "signal-error",
+        "signal-products",
+        "signal-total",
+        "signal-size",
+        "signal-index"
+      ]
+    },
+    "oninit": {
+      "label": "Hook e argumentos",
+      "frameIds": ["oninit-entry", "oninit-call"]
+    },
+    "load": {
+      "label": "loadProducts: chamadas e retornos",
+      "frameIds": [
+        "load-entry",
+        "load-loading",
+        "load-clear",
+        "load-call",
+        "service-entry",
+        "service-get",
+        "service-url",
+        "service-params",
+        "http-get",
+        "http-observable",
+        "service-return",
+        "rxjs-type",
+        "load-callback-context",
+        "rxjs-body",
+        "rxjs-observer",
+        "rxjs-chain",
+        "interceptor-entry",
+        "interceptor-config",
+        "interceptor-token",
+        "interceptor-branch",
+        "interceptor-next",
+        "rxjs-return",
+        "load-end"
+      ]
+    },
+    "service": {
+      "label": "Método do ProductService",
+      "frameIds": [
+        "service-entry",
+        "service-get",
+        "service-url",
+        "service-params",
+        "http-get",
+        "http-observable",
+        "service-return"
+      ]
+    },
+    "interceptor": {
+      "label": "Requisição pública",
+      "frameIds": [
+        "interceptor-entry",
+        "interceptor-config",
+        "interceptor-token",
+        "interceptor-branch",
+        "interceptor-next"
+      ]
+    },
+    "http": {
+      "label": "Fronteira assíncrona",
+      "frameIds": [
+        "interceptor-entry",
+        "interceptor-config",
+        "interceptor-token",
+        "interceptor-branch",
+        "interceptor-next",
+        "http-wait"
+      ]
+    },
+    "signals": {
+      "label": "Resposta e estado reativo",
+      "frameIds": [
+        "response-next",
+        "products-set",
+        "signal-compare",
+        "signal-write",
+        "signal-notify",
+        "total-set",
+        "page-set",
+        "size-set",
+        "loading-done"
+      ]
+    },
+    "error": {
+      "label": "Erro e feedback",
+      "frameIds": ["response-error", "error-set", "error-loading"]
+    },
+    "view": {
+      "label": "Condições e lista",
+      "frameIds": [
+        "view-loading",
+        "view-error",
+        "view-empty",
+        "view-loop",
+        "view-input",
+        "error-message",
+        "error-retry"
+      ]
+    },
+    "empty": {
+      "label": "Ramo de sucesso vazio",
+      "frameIds": ["view-loading", "view-error", "view-empty", "empty-text"]
+    },
+    "card": {
+      "label": "Entrada e apresentação",
+      "frameIds": [
+        "view-loading",
+        "view-error",
+        "view-empty",
+        "view-loop",
+        "view-input",
+        "card-input",
+        "card-link",
+        "card-name",
+        "card-price"
+      ]
+    },
+    "reentry": {
+      "label": "Reentrada por evento",
+      "frameIds": ["event-choice", "retry-call", "page-event", "event-restart"],
+      "branches": {
+        "entry": "retry"
+      }
+    }
+  }
+}

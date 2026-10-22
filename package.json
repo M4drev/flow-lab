@@ -1,0 +1,19 @@
+{
+  "name": "flow-lab",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Visualizador de fluxos de código e skill didática flow-documenter.",
+  "scripts": {
+    "start": "python3 flow-lab/serve.py",
+    "test": "node --test flow-lab/flow-lab.test.cjs flow-documenter/scripts/validate-flow.test.cjs",
+    "test:bridge": "python3 -B -m unittest discover -s flow-lab -p serve_test.py",
+    "check": "npm test && npm run test:bridge"
+  },
+  "engines": {
+    "node": "^22.12.0 || >=24.0.0"
+  },
+  "devDependencies": {
+    "ajv": "8.18.0",
+    "jsdom": "28.1.0"
+  }
+}

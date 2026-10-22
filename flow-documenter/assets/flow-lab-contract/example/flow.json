@@ -1,0 +1,285 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "id": "exemplo-dobrar-entrada",
+    "title": "Entrada da CLI até resultado no terminal",
+    "language": "pt-BR",
+    "description": "Exemplo estrutural baseado no arquivo src/dobro.mjs. O percurso explica chamadas e retorno; não está conectado a um debugger real. Entrada adotada: 2; resultado esperado: 4."
+  },
+  "scenarios": [
+    {
+      "id": "normal",
+      "label": "Entrada válida",
+      "color": "#00ff38"
+    }
+  ],
+  "steps": [
+    {
+      "id": "calcular",
+      "number": "01",
+      "title": "Ler entrada e chamar dobrar",
+      "summary": "Ao executar node src/dobro.mjs 2 no terminal, o programa recebe o texto 2 e Number o converte no número 2, guardado em entrada. dobrar(entrada) envia esse número à função dobrar; ela devolve 4, que será guardado em resultado para a próxima etapa escrever no terminal.",
+      "kind": "sync",
+      "kindLabel": "CÁLCULO SÍNCRONO",
+      "timing": "MESMA PILHA",
+      "actor": "Node.js executando JavaScript",
+      "effect": "resultado recebe 4",
+      "insight": "A chamada precisa retornar antes da atribuição continuar.",
+      "next": "O código usa o resultado para escrever no terminal.",
+      "log": "[CÁLCULO] entrada=2 → dobrar(2) → resultado=4",
+      "activeNodes": [
+        "calculo"
+      ],
+      "primaryNodeId": "calculo",
+      "termIds": [
+        "cli",
+        "argumento",
+        "retorno"
+      ]
+    },
+    {
+      "id": "exibir",
+      "number": "02",
+      "title": "Exibir o resultado",
+      "summary": "console.log(resultado) lê o número 4 guardado em resultado e o escreve no terminal. Calcular o dobro não o mostra automaticamente: esta chamada torna o resultado visível para quem executou o programa.",
+      "kind": "sync",
+      "kindLabel": "SAÍDA",
+      "actor": "Node.js e console",
+      "effect": "O terminal exibe 4",
+      "insight": "Calcular e exibir são responsabilidades diferentes, conectadas pelo valor retornado.",
+      "next": "Fim deste fluxo delimitado.",
+      "log": "[SAÍDA] console.log(resultado) → 4",
+      "activeNodes": [
+        "saida"
+      ],
+      "primaryNodeId": "saida",
+      "termIds": [
+        "metodo",
+        "retorno"
+      ]
+    }
+  ],
+  "graph": {
+    "width": 440,
+    "height": 140,
+    "nodes": [
+      {
+        "id": "calculo",
+        "step": 0,
+        "x": 24,
+        "y": 36,
+        "title": "Entrada → dobro",
+        "subtitle": "chamada e retorno",
+        "type": "sync",
+        "traceId": "calculo"
+      },
+      {
+        "id": "saida",
+        "step": 1,
+        "x": 244,
+        "y": 36,
+        "title": "Terminal",
+        "subtitle": "console.log",
+        "type": "sync",
+        "traceId": "saida"
+      }
+    ],
+    "edges": [
+      {
+        "from": "calculo",
+        "to": "saida",
+        "step": 1,
+        "type": "sync"
+      }
+    ]
+  },
+  "sources": {
+    "dobro": {
+      "path": "src/dobro.mjs",
+      "language": "javascript",
+      "origin": "application",
+      "segments": [
+        {
+          "startLine": 1,
+          "lines": [
+            "const entrada = Number(process.argv[2] ?? \"2\");",
+            "const resultado = dobrar(entrada);",
+            "console.log(resultado);",
+            "function dobrar(valor) {",
+            "  return valor * 2;",
+            "}"
+          ]
+        }
+      ]
+    }
+  },
+  "terms": {
+    "cli": {
+      "label": "CLI / argumento do terminal",
+      "category": "Entrada do programa",
+      "definition": "CLI significa interface de linha de comando: você escreve uma instrução no terminal para iniciar um programa e pode enviar valores junto dela.",
+      "usage": "Em node src/dobro.mjs 2, o último 2 chega como texto em process.argv[2]. Number transforma esse texto no número que entrada guarda.",
+      "sourceId": "dobro",
+      "line": 1
+    },
+    "lista": {
+      "label": "Array / índice",
+      "category": "Lista e posição",
+      "definition": "Array é uma lista de valores. O índice é o número que indica uma posição nessa lista, começando em zero.",
+      "usage": "process.argv guarda os textos enviados ao programa. Neste comando, a posição 2 contém o texto 2 fornecido pelo usuário; ?? usa o texto 2 se não houver valor nessa posição.",
+      "sourceId": "dobro",
+      "line": 1
+    },
+    "metodo": {
+      "label": "Método / objeto",
+      "category": "Ação disponível em um objeto",
+      "definition": "Um objeto reúne valores e ações acessíveis por um nome. Método é uma função acessada por esse objeto para executar uma ação.",
+      "usage": "console é o objeto; log é seu método. console.log(resultado) envia o número 4 a esse método para escrevê-lo no terminal.",
+      "sourceId": "dobro",
+      "line": 3
+    },
+    "argumento": {
+      "label": "Argumento / parâmetro",
+      "category": "Valor de entrada",
+      "definition": "O argumento é o valor enviado na chamada; o parâmetro é o nome que o recebe na função.",
+      "usage": "dobrar(entrada) envia 2; valor recebe 2 dentro de dobrar.",
+      "sourceId": "dobro",
+      "line": 4
+    },
+    "retorno": {
+      "label": "Retorno",
+      "category": "Saída de função",
+      "definition": "return entrega um valor ao trecho que chamou a função.",
+      "usage": "return valor * 2 entrega 4 à atribuição de resultado.",
+      "sourceId": "dobro",
+      "line": 5
+    }
+  },
+  "frames": {
+    "entrada": {
+      "sourceId": "dobro",
+      "line": 1,
+      "label": "Transformar argumento da CLI em número",
+      "explanation": "process.argv é a lista de textos recebidos por este programa Node.js, iniciado no terminal. No comando node src/dobro.mjs 2, process.argv[2] contém o texto 2. Se esse valor faltar, ?? escolhe o texto 2 escrito no código. Number o transforma em número e entrada guarda 2 para a chamada da próxima linha.",
+      "kind": "execute",
+      "termIds": [
+        "cli",
+        "lista",
+        "argumento"
+      ],
+      "variables": [
+        {
+          "name": "entrada",
+          "value": "2"
+        }
+      ]
+    },
+    "chamada": {
+      "sourceId": "dobro",
+      "line": 2,
+      "label": "Entrar na função dobrar",
+      "explanation": "dobrar é uma função declarada na linha 4 deste arquivo. Recebe entrada=2; a atribuição a resultado aguarda o valor retornado.",
+      "kind": "call",
+      "termIds": [
+        "argumento",
+        "retorno"
+      ],
+      "target": {
+        "sourceId": "dobro",
+        "line": 4
+      },
+      "stack": [
+        "código principal",
+        "dobrar"
+      ]
+    },
+    "declaracao": {
+      "sourceId": "dobro",
+      "line": 4,
+      "label": "Contextualizar a função e seu parâmetro",
+      "explanation": "Esta linha declara dobrar e o parâmetro valor. O quadro localiza a função que está sendo chamada; não significa executar novamente uma declaração a cada chamada.",
+      "kind": "declaration",
+      "termIds": [
+        "argumento"
+      ],
+      "variables": [
+        {
+          "name": "valor",
+          "value": "2"
+        }
+      ]
+    },
+    "retorno": {
+      "sourceId": "dobro",
+      "line": 5,
+      "label": "Calcular e retornar o dobro",
+      "explanation": "valor * 2 produz 4. return encerra a chamada e devolve 4 ao chamador, que está avaliando a expressão da linha 2.",
+      "kind": "return",
+      "termIds": [
+        "retorno"
+      ],
+      "target": {
+        "sourceId": "dobro",
+        "line": 2
+      },
+      "stack": [
+        "código principal",
+        "dobrar"
+      ]
+    },
+    "atribuicao": {
+      "sourceId": "dobro",
+      "line": 2,
+      "label": "Retomar a atribuição após o retorno",
+      "explanation": "A chamada já devolveu 4; agora resultado recebe esse valor. Esta é a continuação da mesma expressão, não uma segunda chamada a dobrar.",
+      "kind": "execute",
+      "termIds": [
+        "retorno"
+      ],
+      "variables": [
+        {
+          "name": "resultado",
+          "value": "4"
+        }
+      ],
+      "stack": [
+        "código principal"
+      ]
+    },
+    "saida": {
+      "sourceId": "dobro",
+      "line": 3,
+      "label": "Escrever o resultado no terminal",
+      "explanation": "console.log é o método do objeto console que escreve no terminal. Recebe resultado=4; a saída observável adotada é 4.",
+      "kind": "execute",
+      "termIds": [
+        "metodo",
+        "retorno"
+      ],
+      "variables": [
+        {
+          "name": "resultado",
+          "value": "4"
+        }
+      ]
+    }
+  },
+  "traces": {
+    "calculo": {
+      "label": "Entrada, chamada e retorno",
+      "frameIds": [
+        "entrada",
+        "chamada",
+        "declaracao",
+        "retorno",
+        "atribuicao"
+      ]
+    },
+    "saida": {
+      "label": "Resultado visível",
+      "frameIds": [
+        "saida"
+      ]
+    }
+  }
+}

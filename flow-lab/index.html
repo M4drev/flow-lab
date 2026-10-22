@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Explore um fluxo de código por etapas, chamadas e linhas, com explicações para quem está começando."
+    />
+    <title>Flow Lab — mapa e código</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="flow-engine.js" defer></script>
+    <script src="floating-panels.js" defer></script>
+    <script src="workspace-layout.js" defer></script>
+    <script src="study-mode.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#stepTitle">Pular para a explicação</a>
+    <div class="ambient-grid" aria-hidden="true"></div>
+    <div id="screenFlash" class="screen-flash" aria-hidden="true"></div>
+    <div class="app-shell">
+      <header class="topbar">
+        <button
+          class="brand"
+          id="restartButton"
+          type="button"
+          aria-label="Reiniciar o fluxo"
+        >
+          <b>&gt;</b> FLOW//LAB<span>_</span>
+        </button>
+        <span id="flowSubtitle" class="topbar-meta">MAPA + CÓDIGO</span>
+        <button
+          id="studyModeToggle"
+          class="icon-button neo-button study-mode-toggle"
+          type="button"
+          data-study-toggle
+          aria-pressed="false"
+          aria-label="Entrar em tela cheia com os três painéis de estudo"
+          title="Mostrar somente explicação, código e mapa"
+          disabled
+        >
+          <span aria-hidden="true">⛶</span
+          ><span class="study-mode-label">Tela cheia</span>
+        </button>
+        <details id="settingsMenu" class="settings-menu">
+          <summary class="settings-toggle neo-button">
+            <span aria-hidden="true">⚙</span> Configurações
+          </summary>
+          <section
+            class="settings-panel"
+            aria-label="Configurações do laboratório"
+          >
+            <p class="eyebrow">SEU AMBIENTE DE ESTUDO</p>
+            <h2>Configurações</h2>
+            <div class="settings-actions">
+              <label class="import-button neo-button" for="flowImport"
+                >↥ <span>Abrir JSON</span></label
+              >
+              <input
+                id="flowImport"
+                type="file"
+                accept=".json,application/json"
+                class="sr-only"
+              />
+              <button
+                id="soundToggle"
+                class="icon-button neo-button"
+                type="button"
+                aria-pressed="true"
+                aria-label="Desativar sons de interação"
+              >
+                ♪ <span id="soundLabel">SOM ON</span>
+              </button>
+            </div>
+            <label class="editor-choice"
+              >Editor desta máquina<select id="editorSelect">
+                <option value="auto">Automático · padrão do sistema</option>
+              </select></label
+            >
+            <p id="editorStatus" class="editor-status" role="status"></p>
+            <div class="settings-shortcuts">
+              <h3>Atalhos</h3>
+              <p><kbd>←</kbd> <kbd>→</kbd> linha anterior / próxima linha</p>
+              <p><kbd>Alt</kbd> + setas: mover janela ou barra focada</p>
+              <p>
+                <kbd>Esc</kbd> fecha configurações ou reencaixa a janela focada
+              </p>
+            </div>
+          </section>
+        </details>
+      </header>
+      <section class="mission-bar" aria-labelledby="missionTitle">
+        <div>
+          <p class="eyebrow">UM FLUXO. DUAS ESCALAS DE ESTUDO.</p>
+          <h1 id="missionTitle">Carregando o fluxo…</h1>
+          <p id="flowDescription" class="mission-note"></p>
+        </div>
+      </section>
+      <div id="loadError" class="load-error" role="alert" hidden></div>
+      <section class="progress-region" aria-label="Progresso por etapa">
+        <div class="progress-copy">
+          <span id="progressLabel">ETAPAS</span
+          ><span id="progressPercent">0%</span>
+        </div>
+        <div
+          id="progressTrack"
+          class="progress-track"
+          role="progressbar"
+          aria-label="Progresso do fluxo"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="0"
+        >
+          <div id="progressFill" class="progress-fill"></div>
+        </div>
+      </section>
+      <main id="workspace" class="workspace">
+        <article
+          id="lessonPanel"
+          class="lesson-panel game-card"
+          data-panel-title="Explicação da etapa"
+          data-panel-slot="lesson"
+        >
+          <div class="panel-toolbar">
+            <span>EXPLICAÇÃO DA ETAPA</span>
+            <div>
+              <button
+                class="mini-button study-mode-exit"
+                type="button"
+                data-study-toggle
+                aria-pressed="false"
+                aria-label="Sair da tela cheia"
+                title="Sair da tela cheia (Esc)"
+                hidden
+              >
+                <span aria-hidden="true">⛶</span> Sair
+              </button>
+              <button class="mini-button" type="button" data-detach>
+                Destacar ↗</button
+              ><button
+                class="mini-button panel-close"
+                type="button"
+                data-dock
+                aria-label="Reencaixar explicação da etapa"
+                hidden
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+          <header class="lesson-header">
+            <span id="stepNumber" class="step-orb" aria-hidden="true">01</span>
+            <div>
+              <div class="lesson-tags">
+                <span id="stepKind" class="kind-chip"></span
+                ><span id="stepTiming" class="timing-chip"></span>
+              </div>
+              <p id="stepKicker" class="lesson-kicker"></p>
+              <h2 id="stepTitle" tabindex="-1">Explicação da etapa</h2>
+            </div>
+          </header>
+          <p id="stepSummary" class="step-summary"></p>
+          <div
+            id="stepTerms"
+            class="step-terms"
+            aria-label="Guia imediato da etapa"
+          ></div>
+          <dl class="fact-grid">
+            <div>
+              <dt>Quem executa</dt>
+              <dd id="stepActor"></dd>
+            </div>
+            <div>
+              <dt>Efeito produzido</dt>
+              <dd id="stepEffect"></dd>
+            </div>
+          </dl>
+          <div class="insight-card">
+            <span aria-hidden="true">!</span>
+            <div>
+              <p>CHAVE DE ENTREVISTA</p>
+              <strong id="stepInsight"></strong>
+            </div>
+          </div>
+          <div class="next-callout">
+            <span>PRÓXIMA CONEXÃO</span>
+            <p id="stepNext"></p>
+          </div>
+          <a class="glossary-shortcut" href="#glossary"
+            >↗ Consultar o guia de termos deste fluxo</a
+          >
+        </article>
+        <div
+          class="workspace-resizer"
+          data-split="0"
+          role="separator"
+          aria-orientation="vertical"
+          aria-controls="lessonPanel lineInspector"
+          aria-label="Ajustar larguras da explicação e do código"
+          tabindex="0"
+        ></div>
+        <aside
+          id="lineInspector"
+          class="line-inspector game-card"
+          aria-labelledby="inspectorTitle"
+          data-panel-title="Linha por linha"
+          data-panel-slot="inspector"
+          data-float-width="680"
+          data-float-height="760"
+        >
+          <div class="panel-toolbar">
+            <span>LINHA POR LINHA</span>
+            <div>
+              <button class="mini-button" type="button" data-detach>
+                Destacar ↗</button
+              ><button
+                class="mini-button panel-close"
+                type="button"
+                data-dock
+                aria-label="Reencaixar linha por linha"
+                hidden
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+          <header class="inspector-header">
+            <div>
+              <p class="eyebrow">COMO EM UM DEBUGGER · PERCURSO DIDÁTICO</p>
+              <h2 id="inspectorTitle" tabindex="-1">Linha por linha</h2>
+            </div>
+          </header>
+          <p id="traceName" class="trace-heading"></p>
+          <nav
+            id="sourceTabs"
+            class="source-tabs"
+            aria-label="Arquivos envolvidos na etapa"
+          ></nav>
+          <div class="source-heading">
+            <span id="sourceOrigin" class="origin-chip"></span>
+            <button id="returnToTrace" class="mini-button" type="button" hidden>
+              Voltar à linha atual
+            </button>
+          </div>
+          <p id="sourceOpenStatus" class="editor-status" role="status"></p>
+          <p id="sourcePath" class="source-path"></p>
+          <div class="code-progress" aria-label="Posição e tipo da linha atual">
+            <div class="code-progress-heading">
+              <span id="frameKind" class="frame-kind"></span
+              ><strong id="lineCounter"></strong>
+            </div>
+            <div
+              id="traceRail"
+              class="trace-rail"
+              role="list"
+              aria-label="Passos da leitura: concluídos, atual e próximos"
+            ></div>
+          </div>
+          <div
+            id="sourceCode"
+            class="source-code"
+            tabindex="0"
+            aria-label="Código com linha atual destacada"
+          ></div>
+          <section class="frame-explanation" aria-labelledby="frameTitle">
+            <h3 id="frameTitle"></h3>
+            <p id="frameText"></p>
+          </section>
+          <section class="symbol-section" aria-labelledby="symbolTitle">
+            <h3 id="symbolTitle">Guia imediato — dentro desta linha</h3>
+            <div id="frameTerms"></div>
+          </section>
+          <div id="callTarget" class="call-target" hidden></div>
+          <div id="branchPanel" class="branch-panel" hidden></div>
+          <div id="variablesPanel" class="variables-panel" hidden></div>
+          <details class="stack-details">
+            <summary>Pilha de chamadas deste quadro</summary>
+            <ol id="stackList"></ol>
+          </details>
+          <p id="sourceNote" class="source-note"></p>
+        </aside>
+        <div
+          class="workspace-resizer"
+          data-split="1"
+          role="separator"
+          aria-orientation="vertical"
+          aria-controls="lineInspector runtimePanel"
+          aria-label="Ajustar larguras do código e do mapa"
+          tabindex="0"
+        ></div>
+        <section
+          id="runtimePanel"
+          class="runtime-panel game-card"
+          data-panel-title="Runtime em movimento"
+          data-panel-slot="runtime"
+          data-float-width="960"
+          data-float-height="700"
+          aria-labelledby="runtimeTitle"
+        >
+          <div class="panel-toolbar">
+            <span>RUNTIME EM MOVIMENTO</span>
+            <div>
+              <button class="mini-button" type="button" data-detach>
+                Destacar ↗</button
+              ><button
+                class="mini-button panel-close"
+                type="button"
+                data-dock
+                aria-label="Reencaixar runtime em movimento"
+                hidden
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+          <header class="runtime-header">
+            <div>
+              <p class="eyebrow">CLIQUE EM UM NÓ PARA ENTRAR NO CÓDIGO</p>
+              <h2 id="runtimeTitle">Runtime em movimento</h2>
+            </div>
+            <div class="runtime-legend">
+              <span><i class="dot sync"></i>Síncrono</span
+              ><span><i class="dot async"></i>Assíncrono</span
+              ><span><i class="dot parallel"></i>Paralelo</span>
+            </div>
+          </header>
+          <fieldset class="scenario-switcher" aria-describedby="scenarioHint">
+            <legend>Cenário do percurso</legend>
+            <div id="scenarioControls" class="segmented-control"></div>
+            <p id="scenarioHint" class="scenario-hint">
+              O mapa e as explicações acompanham o cenário escolhido.
+            </p>
+          </fieldset>
+          <div class="map-tools">
+            <span id="mapStatus">Selecione uma etapa do mapa</span>
+            <div>
+              <button
+                id="zoomOut"
+                class="mini-button"
+                type="button"
+                aria-label="Diminuir zoom"
+              >
+                −</button
+              ><button id="zoomFit" class="mini-button" type="button">
+                Ajustar</button
+              ><button
+                id="zoomIn"
+                class="mini-button"
+                type="button"
+                aria-label="Aumentar zoom"
+              >
+                +
+              </button>
+            </div>
+          </div>
+          <div
+            id="mapViewport"
+            class="map-viewport"
+            tabindex="0"
+            aria-label="Mapa causal; use Tab para selecionar os nós"
+          >
+            <div id="mapSizer">
+              <div id="flowMap" class="flow-map">
+                <svg id="edgeLayer" class="edge-layer" aria-hidden="true"></svg>
+                <div id="nodeLayer" class="node-layer"></div>
+              </div>
+            </div>
+          </div>
+          <div id="asyncBadge" class="async-badge" hidden>
+            <span class="spinner" aria-hidden="true"></span
+            ><span>ESPERA / CONTINUAÇÃO ASSÍNCRONA</span>
+          </div>
+          <section class="console-panel" aria-labelledby="consoleTitle">
+            <div class="console-header">
+              <h3 id="consoleTitle">CONSOLE DO PERCURSO</h3>
+              <span>SEQUÊNCIA DIDÁTICA</span>
+            </div>
+            <ol id="consoleList" class="console-list"></ol>
+          </section>
+        </section>
+        <section
+          id="glossary"
+          class="glossary game-card"
+          aria-labelledby="glossaryTitle"
+          data-panel-title="Guia de termos"
+          data-panel-slot="glossary"
+        >
+          <div class="panel-toolbar">
+            <span>GUIA DE TERMOS</span>
+            <div>
+              <button class="mini-button" type="button" data-detach>
+                Destacar ↗</button
+              ><button
+                class="mini-button panel-close"
+                type="button"
+                data-dock
+                aria-label="Reencaixar guia de termos"
+                hidden
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+          <div class="glossary-header">
+            <div>
+              <p class="eyebrow">CONSULTA RÁPIDA</p>
+              <h2 id="glossaryTitle">Guia de termos deste fluxo</h2>
+            </div>
+            <label class="search-label"
+              >Buscar termo<input
+                id="termSearch"
+                type="search"
+                placeholder="Ex.: subscribe, instância…"
+            /></label>
+          </div>
+          <div id="termList" class="term-list"></div>
+        </section>
+      </main>
+    </div>
+    <nav
+      id="flowControls"
+      class="flow-controls"
+      aria-label="Navegação contínua pelas linhas do fluxo"
+      hidden
+    >
+      <div
+        class="control-grip"
+        tabindex="0"
+        aria-label="Arraste para mover os controles; Alt mais setas move pelo teclado"
+      >
+        <span class="grip-dots" aria-hidden="true"></span>
+      </div>
+      <div class="control-buttons">
+        <button
+          id="lineBack"
+          class="neo-button flow-control-button"
+          type="button"
+          disabled
+        >
+          <span aria-hidden="true">←</span><span>Retroceder</span>
+        </button>
+        <button
+          id="openSource"
+          class="neo-button flow-control-button control-editor"
+          type="button"
+          title="Abrir o arquivo e a linha atual no editor desta máquina"
+          aria-label="Abrir o arquivo e a linha atual no editor desta máquina"
+        >
+          <span aria-hidden="true">↗</span
+          ><span class="button-label">Abrir no editor</span>
+        </button>
+        <button
+          id="lineNext"
+          class="neo-button flow-control-button primary"
+          type="button"
+          disabled
+        >
+          <span>Avançar</span><span aria-hidden="true">→</span>
+        </button>
+      </div>
+    </nav>
+    <div id="completionBurst" class="completion-burst" aria-hidden="true"></div>
+    <div id="floatingLayer" class="floating-layer"></div>
+    <p id="announcer" class="sr-only" aria-live="polite"></p>
+  </body>
+</html>

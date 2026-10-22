@@ -1,0 +1,4 @@
+interface:
+  display_name: "Documentador de fluxos"
+  short_description: "Fluxos, diálogos socráticos e cards Anki com código"
+  default_prompt: "Use $flow-documenter para explicar fluxos e dúvidas, criar diálogos socráticos ou cards Anki com guias imediatos e código em português brasileiro. Use *dialogo-socratico para uma história em Markdown e *analogia somente quando quiser uma analogia opcional."
