@@ -46,6 +46,82 @@ Diálogo, Anki e dúvidas também funcionam com conceitos gerais ou materiais, s
 
 Aliases: `*historia-socratica` → diálogo; `*quick-direct` → direto; `*quest-interview` → entrevista; `*fluxo-duvida` → dúvida. As regras completas estão em [`SKILL.md`](flow-documenter/SKILL.md).
 
+## Exemplos de prompts
+
+Envie os exemplos no chat do Codex, com a skill ativa e o projeto que deseja estudar aberto. Adapte o fluxo ao seu projeto; nos pedidos seguintes, use os nomes dos documentos e da pasta que a IA gerar.
+
+**Criar o documento profundo:**
+
+```text
+*fluxo-profundo Explique o fluxo que começa ao abrir a página de produtos e termina com os cards na tela. Siga o código real e mostre o que acontece, por que cada etapa existe e o que ela permite fazer depois.
+```
+
+**Transformar o profundo em revisão enxuta:**
+
+```text
+*fluxo-enxuto flow-catalogo-deep.md
+```
+
+**Ler em parágrafos e setas:**
+
+```text
+*fluxo-direto flow-catalogo-quick.md
+```
+
+**Aprender pelo diálogo de Tony e Petter:**
+
+```text
+*dialogo-socratico flow-catalogo-deep.md. Explore as dúvidas sobre Observable, subscribe e Signal, mostrando o código logo abaixo das falas.
+```
+
+**Planejar a reconstrução do fluxo:**
+
+```text
+*pratica-planejar flow-catalogo-quick.md. Quero reconstruir esse fluxo em uma pasta isolada, com incrementos pequenos e verificáveis.
+```
+
+Depois de revisar e aprovar o plano, envie a retomada com a pasta criada:
+
+```text
+*pratica-continuar /caminho/da/pratica-catalogo
+```
+
+**Gerar o JSON para o visualizador:**
+
+```text
+*fluxo-json flow-catalogo-deep.md. Use as explicações do profundo, confira os arquivos e linhas atuais e valide o JSON contra o projeto.
+```
+
+**Treinar para uma entrevista:**
+
+```text
+*entrevista-perguntas 10 sobre o fluxo do catálogo: HTTP, Observable, subscribe, callback e Signal. Faça perguntas que testem meu entendimento do código, sem incluir respostas.
+```
+
+**Criar cards Anki:**
+
+```text
+*anki 20 sobre flow-catalogo-deep.md. Combine conceitos básicos e usos reais neste fluxo, com cards de frente/verso e lacunas.
+```
+
+**Tirar uma dúvida avulsa:**
+
+```text
+*duvida Qual é a diferença entre devolver um Observable e já ter os dados da API? Mostre um exemplo curto e explique os termos junto do código.
+```
+
+**Pedir uma história sem fluxo anterior:**
+
+```text
+*dialogo-socratico Explique classes e objetos em Java, com exemplos ilustrativos de código e a estrutura de pastas correspondente.
+```
+
+**Solicitar uma analogia:**
+
+```text
+*analogia Quero entender a diferença entre classe e instância em Java. Apresente três opções e aguarde minha escolha.
+```
+
 ## Abrir o Flow Lab
 
 Requer Python 3.9+; o servidor usa somente a biblioteca padrão. Na raiz desta cópia:
